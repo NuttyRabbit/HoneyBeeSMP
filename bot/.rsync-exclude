@@ -1,0 +1,11 @@
+# rsync exclude list for deploying bot/
+.env
+data/
+logs/
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/

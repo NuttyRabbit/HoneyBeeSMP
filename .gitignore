@@ -1,20 +1,20 @@
 # ---------------------------------------------------------------------------
 # HoneyBeeSMP monorepo
 #
-# One repo for everything we author: docs, deployment config, bot, website.
+# The repo is the source of truth for things we author (website, bot, tooling).
 # Excluded on purpose (large / regenerable / secret):
 #   - Minecraft worlds, jars, libraries, mods  (~189M) -> backed up separately
 #   - Crafty databases, TLS keys, admin creds          -> secrets, never commit
-#   - Logs, caches, backups
+#   - Logs, caches, backups, runtime state
 # ---------------------------------------------------------------------------
 
 # --- Symlinks to system paths -----------------------------------------------
-# These point outside the repo (/opt/crafty, /var/www, ...). Git would store
-# only the link target, not contents, which is misleading. The things we care
-# about are tracked as real files under ./website and ./bot instead.
-/discord-bot
-/minecraft-servers
+# These point outside the repo (/opt/crafty, /var/www, ...). Git stores only
+# the link target, never the contents, which is misleading. Tracked sources
+# live under ./website and ./bot instead.
 /crafty-panel
+/minecraft-servers
+/discord-bot
 
 # --- Minecraft server data (backed up separately) ---------------------------
 servers/
@@ -24,7 +24,6 @@ world_the_end/
 libraries/
 mods/
 *.jar
-logs/
 crash-reports/
 
 # --- Crafty panel -----------------------------------------------------------
@@ -39,13 +38,17 @@ session.lock
 *.key
 
 # --- Secrets ----------------------------------------------------------------
-.env
-.env.*
+# Note the repo-root .env pattern is anchored so bot/.env.example survives.
+/.env
+/.env.*
 !.env.example
+bot/.env
+bot/.env.*
+!bot/.env.example
 *.secret
 *credential*
 
-# --- Backups ----------------------------------------------------------------
+# --- Backups -----------------------------------------------------------------
 backups/
 *.tar
 *.tar.gz
@@ -55,6 +58,7 @@ backups/
 
 # --- Logs & caches ----------------------------------------------------------
 *.log
+logs/
 .cache/
 tmp/
 .tmp/

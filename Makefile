@@ -45,7 +45,7 @@ status: ## Show git, service and deploy status
 	@echo "== services =="
 	@printf "nginx:  "; systemctl is-active nginx
 	@printf "docker: "; systemctl is-active docker
-	@printf "crafty: "; docker inspect -f '{{.State.Status}}' crafty_container 2>/dev/null || echo "absent"
+	@printf "crafty: "; sudo docker inspect -f "{{.State.Status}}" crafty_container 2>/dev/null || echo "absent"
 	@echo
 	@echo "== drift (website vs web root) =="
 	@diff -rq "$(WEB_SRC)" "$(WEB_ROOT)" 2>/dev/null && echo "in sync" || true

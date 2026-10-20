@@ -1,0 +1,7 @@
+# bot-local ignores (repo root .gitignore also applies)
+.env
+data/
+logs/
+node_modules/
+.venv/
+__pycache__/

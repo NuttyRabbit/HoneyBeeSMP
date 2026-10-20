@@ -1,0 +1,84 @@
+# ---------------------------------------------------------------------------
+# HoneyBeeSMP monorepo
+#
+# One repo for everything we author: docs, deployment config, bot, website.
+# Excluded on purpose (large / regenerable / secret):
+#   - Minecraft worlds, jars, libraries, mods  (~189M) -> backed up separately
+#   - Crafty databases, TLS keys, admin creds          -> secrets, never commit
+#   - Logs, caches, backups
+# ---------------------------------------------------------------------------
+
+# --- Symlinks to system paths -----------------------------------------------
+# These point outside the repo (/opt/crafty, /var/www, ...). Git would store
+# only the link target, not contents, which is misleading. The things we care
+# about are tracked as real files under ./website and ./bot instead.
+/discord-bot
+/minecraft-servers
+/crafty-panel
+
+# --- Minecraft server data (backed up separately) ---------------------------
+servers/
+world/
+world_nether/
+world_the_end/
+libraries/
+mods/
+*.jar
+logs/
+crash-reports/
+
+# --- Crafty panel -----------------------------------------------------------
+crafty/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+default-creds.txt
+session.lock
+*.pem
+*.key
+
+# --- Secrets ----------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.secret
+*credential*
+
+# --- Backups ----------------------------------------------------------------
+backups/
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.bak
+
+# --- Logs & caches ----------------------------------------------------------
+*.log
+.cache/
+tmp/
+.tmp/
+
+# --- Language / tooling -----------------------------------------------------
+node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+
+# --- Editor / OS ------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*~
+
+# --- Runtime data -----------------------------------------------------------
+data/

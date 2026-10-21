@@ -71,6 +71,23 @@ jobs:
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
+          # Check the key actually parses. A malformed key (a stray
+          # duplicate BEGIN line, a missing END line, a truncated paste)
+          # makes SSH fail with exit 255 before it even tries to connect,
+          # which is a very confusing way to find out. Catch it here and
+          # say what is wrong.
+          if ! ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null 2>&1; then
+            echo "::error::DEPLOY_SSH_KEY is not a valid private key."
+            echo "::error::It must be the whole block, exactly:"
+            echo "::error::  -----BEGIN OPENSSH PRIVATE KEY-----"
+            echo "::error::  <base64 lines>"
+            echo "::error::  -----END OPENSSH PRIVATE KEY-----"
+            echo "::error::Copy it from the file on the server:"
+            echo "::error::  sudo cat ~/.ssh/github-actions-deploy"
+            exit 1
+          fi
+          echo "private key OK"
+
           # Pin the server's host key so we cannot be tricked by a
           # man-in-the-middle. If DEPLOY_SSH_KNOWN_HOSTS was not set, fall
           # back to discovering it (less strict, but better than failing).
@@ -83,11 +100,16 @@ jobs:
           fi
 
           echo "==> deploying $TARGET_ENV to $DEPLOY_USER@$DEPLOY_HOST"
-          ssh \
+          if ! ssh \
             -i ~/.ssh/deploy_key \
             -o BatchMode=yes \
             -o StrictHostKeyChecking=yes \
             "$DEPLOY_USER@$DEPLOY_HOST" \
-            "set -euo pipefail; cd '$DEPLOY_REPO_PATH'; sh scripts/update.sh '$TARGET_ENV' all"
+            "set -euo pipefail; cd '$DEPLOY_REPO_PATH'; sh scripts/update.sh '$TARGET_ENV' all"; then
+            echo "::error::The SSH connection to the server failed."
+            echo "::error::Check that the server is reachable on port 22 and"
+            echo "::error::that the deploy key is in ~/.ssh/authorized_keys."
+            exit 1
+          fi
 
           echo "==> deploy finished"

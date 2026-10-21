@@ -78,9 +78,20 @@ echo "=============================================================="
 echo
 echo "DEPLOY_SSH_KEY"
 if [ "$SHOW_PRIVATE" = "1" ]; then
-	echo "-----BEGIN OPENSSH PRIVATE KEY-----"
+	# The key file already contains its own BEGIN/END lines, so print it
+	# verbatim. Adding another pair here produces a key with doubled
+	# headers, which SSH rejects - and it fails before the connection is
+	# even attempted, so the server logs nothing at all.
 	cat "$KEY_PATH"
-	echo "-----END OPENSSH PRIVATE KEY-----"
+	# Prove the key is valid, so a broken paste is caught here rather
+	# than in a CI log.
+	echo
+	echo "  (self-check: verifying the key parses...)"
+	if ssh-keygen -y -f "$KEY_PATH" > /dev/null 2>&1; then
+		echo "  key is valid - paste the block above exactly as it is"
+	else
+		echo "  WARNING: the key did not parse. Do not use it."
+	fi
 else
 	echo "  (run again with --show-private to print the private key)"
 fi

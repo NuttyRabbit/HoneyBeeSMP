@@ -97,6 +97,14 @@ publish_modpack() {
 		echo "    FAILED to publish the modpack to Modrinth" >&2
 		return 1
 	fi
+
+	# The project page's description lives in the repo too, so push it as
+	# well. Otherwise the listing can say something different from what
+	# the repo says, and nobody notices until a player quotes it.
+	if ! python3 "$REPO_ROOT/scripts/publish-modpack.py" sync-description; then
+		echo "    FAILED to sync the description to Modrinth" >&2
+		return 1
+	fi
 }
 
 deploy_bot() {

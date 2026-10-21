@@ -137,6 +137,29 @@ def auth_header(token: str) -> dict:
     return {"Authorization": token} if token else {}
 
 
+def api_patch(path: str, token: str, data: dict):
+    """PATCH a project. Returns the response body, or None on a 204."""
+    request = urllib.request.Request(
+        f"{API}{path}",
+        data=json.dumps(data).encode(),
+        headers={
+            "User-Agent": USER_AGENT,
+            "Authorization": token,
+            "Content-Type": "application/json",
+        },
+        method="PATCH",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            body = response.read()
+            return json.loads(body) if body else None
+    except urllib.error.HTTPError as err:
+        detail = err.read().decode()[:400]
+        die(f"Modrinth API error {err.code} for {path}: {detail}")
+    except urllib.error.URLError as err:
+        die(f"could not reach Modrinth: {err.reason}")
+
+
 def api_post_multipart(path: str, token: str, data: dict, files: list):
     """POST a multipart request.
 
@@ -315,6 +338,79 @@ def cmd_publish(args) -> int:
     return 0
 
 
+def cmd_sync_description(args) -> int:
+    """Push the repo's description file to the Modrinth project.
+
+    The description lives in the repo so it is reviewed and versioned
+    like everything else, and so the Modrinth page cannot drift from
+    what we think it says.
+    """
+    token = read_token()
+    project_id = read_project_id()
+
+    path = os.path.join(PACK_DIR, "modrinth-description.md")
+    if not os.path.exists(path):
+        die(f"no description at {path}")
+    with open(path, encoding="utf-8") as fh:
+        body = fh.read().strip()
+
+    # The first line is the summary Modrinth shows in listings.
+    summary = body.splitlines()[0].lstrip("# ").strip()
+
+    info(f"syncing the description to project {project_id} ...")
+    api_patch(
+        f"/project/{project_id}",
+        token,
+        {
+            "body": body,
+            "summary": summary,
+            "description": summary,
+        },
+    )
+    info(f"  description: {len(body)} characters")
+    info(f"  summary:     {summary[:70]}")
+    return 0
+
+
+def cmd_submit(args) -> int:
+    """Ask Modrinth to review the project.
+
+    A new modpack starts as a draft. The API refuses to create a project
+    that goes straight to moderation, and the version route does not exist
+    for a draft either - so the first version has to be uploaded with the
+    project, and later versions only after the project is approved.
+
+    This asks for the project to be reviewed. Once a moderator approves
+    it, the project leaves draft and the version route starts working.
+    """
+    token = read_token()
+    project_id = read_project_id()
+
+    project = api_get(f"/project/{project_id}", token)
+    status = project.get("status")
+    requested = project.get("requested_status")
+
+    if status != "draft":
+        info(f"project is already '{status}' - nothing to submit")
+        return 0
+    if requested == "approved":
+        info("project is already queued for review")
+        info(f"  https://modrinth.com/project/{project_id}/settings")
+        return 0
+
+    info("submitting the project for review ...")
+    # Only requested_status can be set directly; changing `status` needs a
+    # permission an API token does not have.
+    api_patch(f"/project/{project_id}", token, {"requested_status": "approved"})
+    info("submitted for review")
+    info(f"  https://modrinth.com/project/{project_id}/settings")
+    info("")
+    info("Until a moderator approves it, the project stays a draft and")
+    info("new versions cannot be uploaded. The first version goes up with")
+    info("the project itself.")
+    return 0
+
+
 def cmd_status(args) -> int:
     token = read_token()
     project_id = read_project_id()
@@ -413,6 +509,14 @@ def main() -> int:
 
     p = sub.add_parser("status", help="show the project and latest version")
     p.set_defaults(func=cmd_status)
+
+    p = sub.add_parser("submit", help="submit the project for review")
+    p.set_defaults(func=cmd_submit)
+
+    p = sub.add_parser(
+        "sync-description", help="push the repo description to the project"
+    )
+    p.set_defaults(func=cmd_sync_description)
 
     p = sub.add_parser("check", help="report which API scopes the token has")
     p.set_defaults(func=cmd_check)

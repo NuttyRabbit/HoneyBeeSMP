@@ -208,6 +208,35 @@ def existing_paths(index: dict) -> set:
     return {f["path"] for f in index.get("files", [])}
 
 
+def next_version(index: dict, major: bool = False, minor: bool = False) -> str:
+    """Move the pack version on, and return the new one.
+
+    Modrinth refuses a version number it has already seen, so the pack
+    version has to move forward every time the pack's contents change.
+    Bumping it here - rather than only when publishing - keeps the version
+    in the repo an honest description of the pack, so a deploy knows
+    whether there is anything new to publish.
+    """
+    current = index.get("versionId", "1.0.0")
+    parts = current.split(".")
+    while len(parts) < 3:
+        parts.append("0")
+
+    try:
+        major_num, minor_num, patch = (int(p) for p in parts[:3])
+    except ValueError:
+        die(f"versionId '{current}' is not a plain version number")
+
+    if major:
+        major_num, minor_num, patch = major_num + 1, 0, 0
+    elif minor:
+        major_num, minor_num, patch = major_num, minor_num + 1, 0
+    else:
+        patch += 1
+
+    return f"{major_num}.{minor_num}.{patch}"
+
+
 def cmd_add(args) -> int:
     env = args.env
     game = mc_version(env)
@@ -260,6 +289,11 @@ def cmd_add(args) -> int:
         index.setdefault("name", DEFAULT_NAME)
         index.setdefault("summary", DEFAULT_SUMMARY)
         index.setdefault("versionId", "1.0.0")
+        # The pack's contents have changed, so its version has to move on.
+        # Otherwise the next publish would try to send a version Modrinth
+        # has already seen, and be refused.
+        index["versionId"] = next_version(index)
+        info(f"  pack version -> {index['versionId']}")
         save_index(index)
     else:
         info("nothing to add")
@@ -426,23 +460,7 @@ def cmd_bump(args) -> int:
     """
     index = load_index()
     current = index.get("versionId", "1.0.0")
-    parts = current.split(".")
-    while len(parts) < 3:
-        parts.append("0")
-
-    try:
-        major, minor, patch = (int(p) for p in parts[:3])
-    except ValueError:
-        die(f"versionId '{current}' is not a plain version number")
-
-    if args.major:
-        major, minor, patch = major + 1, 0, 0
-    elif args.minor:
-        major, minor, patch = major, minor + 1, 0
-    else:
-        patch += 1
-
-    index["versionId"] = f"{major}.{minor}.{patch}"
+    index["versionId"] = next_version(index, major=args.major, minor=args.minor)
     save_index(index)
     info(f"version: {current} -> {index['versionId']}")
     return 0

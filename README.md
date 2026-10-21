@@ -375,7 +375,11 @@ Players install the pack from
 offers them updates when you publish a new version. Nobody has to
 re-download anything by hand.
 
-The live deploy publishes automatically. To publish by hand:
+The live deploy publishes automatically. It only publishes when the pack
+in the repo is a version Modrinth has not seen, so a deploy that does not
+touch the pack leaves the published one alone.
+
+To publish by hand:
 
 ```sh
 make modpack-publish    # bumps the version, then publishes
@@ -384,7 +388,14 @@ make modpack            # what is in the pack
 ```
 
 Modrinth rejects a version number it has seen before, so the version is
-bumped first.
+bumped first. `modpack.py add` bumps it too, whenever it changes what is
+in the pack - so the version in the repo always describes the pack that is
+actually there.
+
+**The project is still a draft.** Until a moderator approves it, versions
+cannot be uploaded and the pack is not visible to players. Publishing
+skips cleanly while that is the case, and the pack goes out on the first
+live deploy after approval.
 
 ## Backups
 

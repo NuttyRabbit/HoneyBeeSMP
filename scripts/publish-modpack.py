@@ -119,7 +119,7 @@ def write_project_id(project_id: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-def api_get(path: str, token: str = ""):
+def api_get(path: str, token: str = "", missing_ok: bool = False):
     request = urllib.request.Request(
         f"{API}{path}", headers={"User-Agent": USER_AGENT, **auth_header(token)}
     )
@@ -127,6 +127,10 @@ def api_get(path: str, token: str = ""):
         with urllib.request.urlopen(request, timeout=60) as response:
             return json.loads(response.read().decode())
     except urllib.error.HTTPError as err:
+        # A draft project has no versions route, so a 404 there means
+        # "not published yet" rather than "broken".
+        if missing_ok and err.code == 404:
+            return None
         body = err.read().decode()[:400]
         die(f"Modrinth API error {err.code} for {path}: {body}")
     except urllib.error.URLError as err:
@@ -160,7 +164,7 @@ def api_patch(path: str, token: str, data: dict):
         die(f"could not reach Modrinth: {err.reason}")
 
 
-def api_post_multipart(path: str, token: str, data: dict, files: list):
+def api_post_multipart(path: str, token: str, data: dict, files: list, missing_ok: bool = False):
     """POST a multipart request.
 
     Modrinth expects the metadata as a single form field named "data"
@@ -198,6 +202,10 @@ def api_post_multipart(path: str, token: str, data: dict, files: list):
         with urllib.request.urlopen(request, timeout=300) as response:
             return json.loads(response.read().decode())
     except urllib.error.HTTPError as err:
+        # Creating a version on a draft project answers 404. That is the
+        # project simply not being ready for versions yet, not a fault.
+        if missing_ok and err.code == 404:
+            return None
         detail = err.read().decode()[:600]
         die(f"Modrinth API error {err.code} for {path}: {detail}")
     except urllib.error.URLError as err:
@@ -291,15 +299,41 @@ def cmd_publish(args) -> int:
     # Build the pack.
     pack_bytes, pack_name = build_pack(version_number)
 
-    # The project must exist and the version must not already be published.
-    existing = api_get(f"/project/{project_id}/version", token)
+    # A draft project cannot have versions uploaded to it - the API
+    # answers 404 for the create route. That is not a failure: it means
+    # the project has not been approved for review yet. Say so and stop,
+    # rather than failing the deploy that triggered this. The pack goes
+    # out on the next live deploy once the project is approved.
+    project = api_get(f"/project/{project_id}", token)
+    if project.get("status") == "draft":
+        info(
+            f"skipped: the project is still a draft on Modrinth.\n"
+            f"  Versions cannot be uploaded until a moderator approves it.\n"
+            f"  The pack will go out on the next live deploy after that."
+        )
+        return 0
+
+    # The version must not already be published.
+    existing = api_get(
+        f"/project/{project_id}/version", token, missing_ok=True
+    )
+    if existing is None:
+        info(
+            f"skipped: project {project_id} has no versions yet.\n"
+            f"  Versions cannot be uploaded to it until it is approved."
+        )
+        return 0
+
     for version in existing:
         if version.get("version_number") == version_number:
-            die(
-                f"version {version_number} is already published on Modrinth.\n"
-                f"  Bump the pack version before publishing:\n"
-                f"    python3 scripts/modpack.py bump"
+            # Not a failure: the deploy publishes whatever the repo says,
+            # and the repo's version has not moved on, so there is simply
+            # nothing new to send.
+            info(
+                f"version {version_number} is already published - "
+                f"nothing to do"
             )
+            return 0
 
     data = {
         "name": f"{index.get('name', 'HoneyBeeSMP')} {version_number}",
@@ -332,7 +366,15 @@ def cmd_publish(args) -> int:
         token,
         data,
         [("file_parts", pack_name, pack_bytes)],
+        missing_ok=True,
     )
+    if result is None:
+        info(
+            f"skipped: Modrinth would not accept a version for this project.\n"
+            f"  It is most likely still a draft. The pack will go out on the\n"
+            f"  next live deploy once it has been approved."
+        )
+        return 0
     info(f"published {result.get('version_number')} ({result.get('id')})")
     info(f"  url: https://modrinth.com/modpack/{project_id}/version/{result.get('id')}")
     return 0

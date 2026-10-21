@@ -89,15 +89,29 @@ jobs:
           echo "private key OK"
 
           # Pin the server's host key so we cannot be tricked by a
-          # man-in-the-middle. If DEPLOY_SSH_KNOWN_HOSTS was not set, fall
-          # back to discovering it (less strict, but better than failing).
+          # man-in-the-middle.
+          #
+          # A known_hosts line is: <hostname> <keytype> <key> [comment]
+          # The hostname must be there, or SSH cannot match the entry to
+          # the host and strict checking fails with "No ED25519 host key
+          # is known". If the secret we were given is missing the
+          # hostname, add it rather than failing.
           if [ -n "${DEPLOY_SSH_KNOWN_HOSTS:-}" ]; then
-            printf '%s\n' "$DEPLOY_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+            case "$DEPLOY_SSH_KNOWN_HOSTS" in
+            "$DEPLOY_HOST"*) echo "$DEPLOY_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts ;;
+            ssh-*|ecdsa-*) echo "$DEPLOY_HOST $DEPLOY_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts ;;
+            *) echo "$DEPLOY_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts ;;
+            esac
             echo "using the pinned host key from DEPLOY_SSH_KNOWN_HOSTS"
           else
             echo "::warning::DEPLOY_SSH_KNOWN_HOSTS is not set; discovering the host key instead"
             ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
           fi
+
+          # Show what we are about to trust, so a mismatch is obvious.
+          echo "--- known_hosts ---"
+          cat ~/.ssh/known_hosts
+          echo "-------------------"
 
           echo "==> deploying $TARGET_ENV to $DEPLOY_USER@$DEPLOY_HOST"
           if ! ssh \
@@ -107,8 +121,11 @@ jobs:
             "$DEPLOY_USER@$DEPLOY_HOST" \
             "set -euo pipefail; cd '$DEPLOY_REPO_PATH'; sh scripts/update.sh '$TARGET_ENV' all"; then
             echo "::error::The SSH connection to the server failed."
-            echo "::error::Check that the server is reachable on port 22 and"
-            echo "::error::that the deploy key is in ~/.ssh/authorized_keys."
+            echo "::error::Common causes:"
+            echo "::error::  - the server is not reachable on port 22 from here"
+            echo "::error::  - the deploy key is not in the server's authorized_keys"
+            echo "::error::  - the known_hosts entry does not match the server's host key"
+            echo "::error::The known_hosts entry in use is printed above."
             exit 1
           fi
 

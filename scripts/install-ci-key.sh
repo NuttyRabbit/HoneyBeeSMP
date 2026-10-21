@@ -106,6 +106,16 @@ echo "DEPLOY_REPO_PATH"
 echo "  $REPO_ROOT"
 echo
 echo "DEPLOY_SSH_KNOWN_HOSTS  (optional, but recommended)"
-echo "  $(cat /etc/ssh/ssh_host_ed25519_key.pub 2>/dev/null || echo '(no ed25519 host key found)')"
+# A known_hosts line needs the HOSTNAME in front, followed by the key type
+# and the key. The contents of /etc/ssh/ssh_host_ed25519_key.pub are just
+# "keytype key comment" - pasting those straight into known_hosts means
+# SSH cannot match the entry to the host, and with StrictHostKeyChecking
+# it fails with "No ED25519 host key is known".
+HOST_KEY=$(cat /etc/ssh/ssh_host_ed25519_key.pub 2>/dev/null || echo '')
+if [ -n "$HOST_KEY" ]; then
+	echo "  132.145.16.69 $(echo "$HOST_KEY" | awk '{print $1, $2}')"
+else
+	echo "  (no ed25519 host key found)"
+fi
 echo
 echo "=============================================================="

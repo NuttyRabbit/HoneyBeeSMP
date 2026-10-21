@@ -168,14 +168,125 @@ So changing a setting is an ordinary edit, commit and push. The deploy
 applies it to the target server. It never touches the world, player data or
 the server jars.
 
-To add a mod, add its line to `minecraft/mods/mods.manifest`:
+### Adding a mod
+
+Mods are listed in `minecraft/mods/mods.manifest`, one per line:
 
 ```
-create-1.21.1-1.0.0.jar  https://example.com/create-1.21.1-1.0.0.jar
+<the-exact-jar-filename>.jar  <direct-download-url>
 ```
 
-The deploy downloads any missing mod and removes any mod that is no longer
-listed, so dev and live stay on the same mod set.
+The jar files themselves are not in git - they are downloaded on the server
+by the deploy.
+
+**1. Find a server-side build.**
+
+This is the step people get wrong. A dedicated server must only run mods
+marked **"Server"** on Modrinth. A client-only mod will crash the server on
+startup, and the failure is cryptic:
+
+```
+Exception in thread "main" java.lang.NoClassDefFoundError: org/lwjgl/Version
+```
+
+That is what happens if you install a client-only mod such as Sodium, Xaero's
+or JourneyMap. Check the mod's page - if it says "Client: Required" and
+"Server: Not required", it is a client mod and does not belong here.
+
+You also need the build that matches:
+
+| | |
+|---|---|
+| Minecraft | 1.21.1 |
+| Mod loader | NeoForge |
+| Loader version | 21.1.264 |
+
+**2. Get the direct download URL and the exact filename.**
+
+Modrinth's API gives both, and avoids the "which of the seven files do I
+want" problem:
+
+```sh
+# list the versions available for our loader and game version
+curl -s "https://api.modrinth.com/v2/project/terralith/version?game_versions=%5B%221.21.1%22%5D&loaders=%5B%22neoforge%22%5D"
+```
+
+Each version has a `files` array; the entry with `"primary": true` is the
+one you want. Note its `filename` - the manifest must match it exactly.
+
+**3. Add the line to the manifest.**
+
+```
+# minecraft/mods/mods.manifest
+Terralith_1.21.1_v2.6.2_Neoforge.jar  https://cdn.modrinth.com/data/8oi3bsk5/versions/IY93YaEe/Terralith_1.21.1_v2.6.2_Neoforge.jar
+```
+
+The two columns are separated by whitespace. A `#` starts a comment.
+
+**4. Push to `develop` and let it install on the dev server.**
+
+```sh
+git add minecraft/mods/mods.manifest
+git commit -m "Add Terralith"
+git push origin develop
+```
+
+The deploy downloads the jar, checks it really is a jar (and not an HTML
+error page), and installs it. You will see it in the log:
+
+```
+==> reconciling mods
+    downloading Terralith_1.21.1_v2.6.2_Neoforge.jar
+```
+
+**5. Restart the dev server so it loads the mod.**
+
+Mods are read at startup, so the server must be restarted:
+
+```sh
+make mc-restart-dev          # on the server
+```
+
+Then confirm it actually loaded, rather than assuming:
+
+```sh
+sudo grep -A8 "Mod List" /opt/crafty/servers/d48afa12-59a5-496e-829a-1ced86d108b5/logs/latest.log
+```
+
+**6. Test it, then promote to live.**
+
+Once it works on dev, merge to `main` and push. The live server gets the
+same jar. **Restart the live server too** - it is a separate machine state:
+
+```sh
+make mc-restart              # on the server
+```
+
+### Removing a mod
+
+Delete its line from the manifest and push. The next deploy removes the jar
+from the server:
+
+```
+    removing unlisted mod sodium-neoforge-0.8.13+mc1.21.1.jar
+```
+
+**Restart the server afterwards** so it stops loading the mod. The jar is
+gone from disk, but a running server keeps the mod loaded until it restarts.
+
+### Mods and dependencies
+
+If a mod needs another mod (a library, an API), **list both**. The manifest
+has no notion of dependencies, so anything the mod needs must be on the
+server too, or the server will not start. Look at the mod's page for its
+dependencies and add a line for each.
+
+### Mods are not backed up as source
+
+The mod jars live on the server and are re-downloaded from the manifest on
+every deploy, so they do not need to be in the backup. If a mod disappears
+from Modrinth, the manifest entry stops working - keep the URL stable, or
+vendor the jar somewhere permanent and point the manifest at that.
 
 ### Memory allocation
 

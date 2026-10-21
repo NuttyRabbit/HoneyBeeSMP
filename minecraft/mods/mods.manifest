@@ -1,21 +1,46 @@
 # HoneyBeeSMP — Minecraft mods
 #
-# One mod per line, in the format:
+# One mod per line:
 #
-#     <mod-file-name>.jar  <download-url>
+#     <the-exact-jar-filename>.jar  <direct-download-url>
 #
-# The deploy script downloads any mod listed here that is missing from the
-# target server, and removes mods that are no longer listed. This keeps the
-# dev and live servers on exactly the same mod set, promoted through git.
+# The filename must match the file on the server exactly. The deploy
+# downloads any mod listed here that is missing from the target server,
+# and removes any mod that is no longer listed, so the dev and live
+# servers always run the same mod set.
 #
 # Lines starting with '#' are comments. Blank lines are ignored.
 #
-# A mod is installed by adding its line here, then running:
-#     ./scripts/deploy.sh minecraft <env>
+# ---------------------------------------------------------------------------
+# Before you add a mod
+# ---------------------------------------------------------------------------
 #
+# 1. It must be a SERVER-side mod. Check the mod's page on Modrinth: if
+#    it says "Client: Required", it will crash the server on startup with
+#    "NoClassDefFoundError: org/lwjgl/Version" or similar. Mods like
+#    Sodium, Xaero's and JourneyMap are client-only and do not belong here.
+#
+# 2. It must match our setup:
+#        Minecraft 1.21.1, NeoForge, loader 21.1.264
+#
+# 3. If it needs another mod (a library or API), list that too - the
+#    manifest has no notion of dependencies.
+#
+# 4. Get the direct download URL and the exact filename from the
+#    Modrinth API. The entry with "primary": true is the one you want.
+#
+# Then add your line below, push to develop, and let the dev server
+# install it. Restart the server afterwards so it loads the mod.
+#
+# The full walkthrough is in README.md, under "Adding a mod".
+#
+# ---------------------------------------------------------------------------
 # Example:
-#   create-1.21.1-1.0.0.jar  https://example.com/create-1.21.1-1.0.0.jar
+#
+#   Terralith_1.21.1_v2.6.2_Neoforge.jar  https://cdn.modrinth.com/data/8oi3bsk5/versions/IY93YaEe/Terralith_1.21.1_v2.6.2_Neoforge.jar
 #
 # Currently no mods are installed.
 
+# A test pair: terralith needs lithostitched, so both are listed.
+lithostitched-1.8.1-neoforge-21.1.jar  https://cdn.modrinth.com/data/XaDC71GB/versions/cZu4cHY3/lithostitched-1.8.1-neoforge-21.1.jar
 Terralith_1.21.1_v2.6.2_Neoforge.jar  https://cdn.modrinth.com/data/8oi3bsk5/versions/IY93YaEe/Terralith_1.21.1_v2.6.2_Neoforge.jar

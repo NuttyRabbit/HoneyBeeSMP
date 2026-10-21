@@ -7,7 +7,7 @@ works for everyone else too.
 | | |
 |---|---|
 | **Play on** | `play.honeybeesmp.co.uk` (port 25566) |
-| **Modpack** | [Modrinth](https://modrinth.com/modpack/honeybeesmp) |
+| **On Modrinth** | [modrinth.com/server/honeybeesmp](https://modrinth.com/server/honeybeesmp) |
 | **Website** | https://honeybeesmp.co.uk |
 | **Server panel** | https://panel.honeybeesmp.co.uk |
 | **Source** | https://github.com/NuttyRabbit/HoneyBeeSMP |
@@ -60,21 +60,26 @@ works for everyone else too.
 
 ### Install the modpack
 
-1. Open **Modrinth App** or **Prism Launcher**.
-2. Find the **HoneyBeeSMP** project and install it.
-3. Launch with Minecraft 1.21.1 and NeoForge 21.1.264.
-4. Connect to `play.honeybeesmp.co.uk`.
+The server is listed on [Modrinth](https://modrinth.com/server/honeybeesmp),
+so Modrinth knows exactly which mods you need.
 
-The launcher handles the rest: it downloads the mods, the NeoForge version
-and the configs, and checks for updates before you play.
+1. Open **Modrinth App** or **Prism Launcher**.
+2. Find **HoneyBeeSMP** on Modrinth and click **play**.
+3. Modrinth App installs the mods and puts you straight into the server.
+
+If you would rather install it yourself, the pack is on the project's
+**Files** tab. It is a Modrinth pack, so Modrinth App and Prism Launcher
+both handle it, and both will offer you the update when we publish a new
+version.
 
 ## Staying up to date
 
 This is a **shared pack**. The server and your client run the same mods from
 the same list, so when we change something you get the same change.
 
-- Modrinth App and Prism Launcher check for a new version of the pack when
-  you launch, and offer to update.
+- When we publish a new version of the pack, Modrinth tells every instance
+  linked to the server, and the launcher prompts you to accept the update
+  before you launch.
 - If a mod changes so much that the old version is no longer compatible, the
   pack is republished with the new one and your launcher picks it up.
 
@@ -374,10 +379,11 @@ You can also restart as part of a deploy:
 
 ## Publish the modpack
 
-Players install the pack from
-[Modrinth](https://modrinth.com/modpack/honeybeesmp), and their launcher
-offers them updates when you publish a new version. Nobody has to
-re-download anything by hand.
+The server is listed on
+[Modrinth](https://modrinth.com/server/honeybeesmp). Players click play, and
+Modrinth hands their launcher the pack this server is running - so the
+launcher keeps them up to date, and nobody has to re-download anything by
+hand.
 
 The live deploy publishes automatically. It only publishes when the pack
 in the repo is a version Modrinth has not seen, so a deploy that does not
@@ -396,10 +402,10 @@ bumped first. `modpack.py add` bumps it too, whenever it changes what is
 in the pack - so the version in the repo always describes the pack that is
 actually there.
 
-**The project is still a draft.** Until a moderator approves it, versions
-cannot be uploaded and the pack is not visible to players. Publishing
-skips cleanly while that is the case, and the pack goes out on the first
-live deploy after approval.
+**The project is still a draft.** Until a moderator approves it, nobody can
+see the server listing and the pack cannot be downloaded. Publishing skips
+cleanly while that is the case, and the pack goes out on the first live
+deploy after approval.
 
 ## Backups
 

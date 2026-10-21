@@ -1,18 +1,28 @@
 #!/usr/bin/env python3
-"""publish-modpack.py — publish the HoneyBeeSMP modpack to Modrinth.
+"""publish-modpack.py — publish the HoneyBeeSMP server to Modrinth.
 
-Publishing to Modrinth rather than serving the .mrpack ourselves means
-players who install the pack from Modrinth get updates pushed to them by
-the launcher (Modrinth App and Prism Launcher both poll the project for new
-versions), instead of having to re-download a file from our website.
+Modrinth has a Server Project type (`minecraft_java_server`). A server
+project is a *listing*: it names the address players connect to, and it
+declares the content they need in order to join. Players who click play
+in Modrinth App get that content installed and are dropped straight into
+the server, and they are told when the server's content changes.
 
-The pack is built from the same modrinth.index.json the server deploys
-from, so what players install and what the server runs cannot drift apart.
+This project is one of those. The content it declares is our pack, and
+the pack is the same `modrinth.index.json` the server deploys from - so
+what players install and what the server runs cannot drift apart.
+
+The pack is published as a version of the server project, and the
+project's "content" is pointed at that version. When the pack changes,
+publishing a new version and re-pointing the content is what tells every
+linked client that there is an update.
 
 Subcommands:
     create     create the Modrinth project (once)
     publish    build the pack and upload it as a new version
-    status     show the project and its latest published version
+    status     show the project, its address and the content it serves
+    submit     ask Modrinth to review the project
+    sync-description  push the repo's description file to the project
+    check      report which API scopes the token has
 
 The API token is read from, in order of preference:
     $MODRINTH_TOKEN
@@ -31,38 +41,25 @@ import urllib.error
 import urllib.request
 
 API = "https://api.modrinth.com/v2"
-USER_AGENT = "HoneyBeeSMP-modpack/1.0 (honeybeesmp.co.uk)"
+API_V3 = "https://api.modrinth.com/v3"
+USER_AGENT = "HoneyBeeSMP-server/1.0 (honeybeesmp.co.uk)"
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PACK_DIR = os.path.join(REPO, "minecraft", "modpack")
+MC_DIR = os.path.join(REPO, "minecraft")
 INDEX_PATH = os.path.join(PACK_DIR, "modrinth.index.json")
+DESCRIPTION_PATH = os.path.join(PACK_DIR, "modrinth-description.md")
 STATE_PATH = os.path.expanduser("~/.config/modrinth/project-id")
 
-# The project metadata. Modrinth needs a title, a description and at least
-# one category; the rest is our own.
-PROJECT = {
-    "title": "HoneyBeeSMP",
+# The server project's own metadata. The address and the player count are
+# read from the live environment's config instead, so the listing always
+# says what the server actually does.
+SERVER = {
+    "name": "HoneyBeeSMP",
     "slug": "honeybeesmp",
-    "description": "The official modpack for the HoneyBeeSMP Minecraft server.",
-    "body": (
-        "The mods and configs for the HoneyBeeSMP Minecraft server.\n\n"
-        "Import this pack into Modrinth App or Prism Launcher "
-        "and it will keep itself up to date: when the server changes its "
-        "mods, the launcher offers you the new version before you play.\n\n"
-        "Minecraft 1.21.1, NeoForge 21.1.264.\n"
-        "Join us at honeybeesmp.co.uk on port 25566."
-    ),
-    "project_type": "modpack",
-    "categories": ["utility", "technology"],
-    "additional_categories": [],
-    "environment": ["client_and_server"],
-    "client_side": "required",
-    "server_side": "required",
-    "status": "draft",
-    "is_draft": True,
-    "license_id": "MIT",
-    "versions": [],
-    "initial_versions": [],
+    "country": "GB",
+    "region": "europe",
+    "languages": ["en"],
 }
 
 
@@ -115,20 +112,88 @@ def write_project_id(project_id: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# The server's own settings
+# ---------------------------------------------------------------------------
+
+
+def read_env_conf(env: str = "live") -> dict:
+    """Read an environment's settings out of minecraft/env/<env>/env.conf."""
+    path = os.path.join(MC_DIR, "env", env, "env.conf")
+    if not os.path.exists(path):
+        die(f"no environment config at {path}")
+    settings = {}
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            settings[key.strip()] = value.strip()
+    return settings
+
+
+def server_address() -> str:
+    """The address players connect to, as Modrinth wants it.
+
+    The address and the port both come from the live environment's config,
+    so the Modrinth listing cannot claim an address the server does not
+    actually use.
+    """
+    env = read_env_conf("live")
+    address = env.get("SERVER_ADDRESS", "")
+    port = env.get("SERVER_PORT", "")
+    if not address:
+        die("no SERVER_ADDRESS in the live environment config")
+    return f"{address}:{port}" if port else address
+
+
+def max_players() -> int:
+    """The player limit, from the server.properties template."""
+    path = os.path.join(MC_DIR, "server.properties")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("max-players="):
+                    return int(line.split("=", 1)[1].strip())
+    except (OSError, ValueError):
+        pass
+    return 20
+
+
+def read_description() -> tuple:
+    """The project's description body and summary.
+
+    The description lives in the repo so it is reviewed and versioned like
+    everything else, and so the Modrinth page cannot drift from what we
+    think it says.
+    """
+    if not os.path.exists(DESCRIPTION_PATH):
+        die(f"no description at {DESCRIPTION_PATH}")
+    with open(DESCRIPTION_PATH, encoding="utf-8") as fh:
+        body = fh.read().strip()
+    # The first line is the summary Modrinth shows in listings.
+    summary = body.splitlines()[0].lstrip("# ").strip()
+    return body, summary
+
+
+# ---------------------------------------------------------------------------
 # API helpers
 # ---------------------------------------------------------------------------
 
 
-def api_get(path: str, token: str = "", missing_ok: bool = False):
+def auth_header(token: str) -> dict:
+    return {"Authorization": token} if token else {}
+
+
+def api_get(path: str, token: str = "", missing_ok: bool = False, v3: bool = False):
+    base = API_V3 if v3 else API
     request = urllib.request.Request(
-        f"{API}{path}", headers={"User-Agent": USER_AGENT, **auth_header(token)}
+        f"{base}{path}", headers={"User-Agent": USER_AGENT, **auth_header(token)}
     )
     try:
         with urllib.request.urlopen(request, timeout=60) as response:
             return json.loads(response.read().decode())
     except urllib.error.HTTPError as err:
-        # A draft project has no versions route, so a 404 there means
-        # "not published yet" rather than "broken".
         if missing_ok and err.code == 404:
             return None
         body = err.read().decode()[:400]
@@ -137,41 +202,40 @@ def api_get(path: str, token: str = "", missing_ok: bool = False):
         die(f"could not reach Modrinth: {err.reason}")
 
 
-def auth_header(token: str) -> dict:
-    return {"Authorization": token} if token else {}
-
-
-def api_patch(path: str, token: str, data: dict):
-    """PATCH a project. Returns the response body, or None on a 204."""
+def api_json(method: str, path: str, token: str, data: dict, v3: bool = False):
+    """Send a JSON request. Returns the response body, or None on a 204."""
+    base = API_V3 if v3 else API
     request = urllib.request.Request(
-        f"{API}{path}",
+        f"{base}{path}",
         data=json.dumps(data).encode(),
         headers={
             "User-Agent": USER_AGENT,
             "Authorization": token,
             "Content-Type": "application/json",
         },
-        method="PATCH",
+        method=method,
     )
     try:
         with urllib.request.urlopen(request, timeout=60) as response:
             body = response.read()
             return json.loads(body) if body else None
     except urllib.error.HTTPError as err:
-        detail = err.read().decode()[:400]
+        detail = err.read().decode()[:600]
         die(f"Modrinth API error {err.code} for {path}: {detail}")
     except urllib.error.URLError as err:
         die(f"could not reach Modrinth: {err.reason}")
 
 
-def api_post_multipart(path: str, token: str, data: dict, files: list, missing_ok: bool = False):
+def api_post_multipart(path: str, token: str, data: dict, files: list, v3: bool = False):
     """POST a multipart request.
 
     Modrinth expects the metadata as a single form field named "data"
-    holding the JSON, plus one field per uploaded file.
+    holding the JSON, plus one field per uploaded file. The data field has
+    to come first.
 
     files is a list of (field, filename, bytes).
     """
+    base = API_V3 if v3 else API
     boundary = "----HoneyBeeSMPModpackBoundary7d91f3a2"
     body = bytearray()
 
@@ -189,7 +253,7 @@ def api_post_multipart(path: str, token: str, data: dict, files: list, missing_o
     body += f"--{boundary}--\r\n".encode()
 
     request = urllib.request.Request(
-        f"{API}{path}",
+        f"{base}{path}",
         data=bytes(body),
         headers={
             "User-Agent": USER_AGENT,
@@ -202,10 +266,6 @@ def api_post_multipart(path: str, token: str, data: dict, files: list, missing_o
         with urllib.request.urlopen(request, timeout=300) as response:
             return json.loads(response.read().decode())
     except urllib.error.HTTPError as err:
-        # Creating a version on a draft project answers 404. That is the
-        # project simply not being ready for versions yet, not a fault.
-        if missing_ok and err.code == 404:
-            return None
         detail = err.read().decode()[:600]
         die(f"Modrinth API error {err.code} for {path}: {detail}")
     except urllib.error.URLError as err:
@@ -213,62 +273,23 @@ def api_post_multipart(path: str, token: str, data: dict, files: list, missing_o
 
 
 # ---------------------------------------------------------------------------
-# Commands
+# The pack
 # ---------------------------------------------------------------------------
 
 
-def cmd_create(args) -> int:
-    token = read_token()
-    if os.path.exists(STATE_PATH) and not args.force:
-        info(f"project already exists: {read_project_id()}")
-        return 0
+def load_index() -> dict:
+    if not os.path.exists(INDEX_PATH):
+        die(f"no pack index at {INDEX_PATH}")
+    with open(INDEX_PATH, encoding="utf-8") as fh:
+        return json.load(fh)
 
-    index = load_index()
+
+def pack_versions(index: dict) -> tuple:
+    """The Minecraft version and the mod loader the pack is for."""
     deps = index.get("dependencies", {})
     game_versions = [deps["minecraft"]] if "minecraft" in deps else ["1.21.1"]
     loaders = [k for k in deps if k not in ("minecraft",)] or ["neoforge"]
-    version_number = index.get("versionId", "1.0.0")
-
-    # Build the pack, which is uploaded as the project's first version.
-    pack_bytes, pack_name = build_pack(version_number)
-
-    data = dict(PROJECT)
-    data["game_versions"] = game_versions
-    data["loaders"] = loaders
-    # The first version is attached in the same request. Modrinth requires
-    # the version to name the multipart part carrying the file, and the
-    # part is the "file_parts" field below.
-    data["initial_versions"] = [
-        {
-            "name": f"{index.get('name', 'HoneyBeeSMP')} {version_number}",
-            "version_number": version_number,
-            "changelog": "First release.",
-            "game_versions": game_versions,
-            "loaders": loaders,
-            "version_type": "release",
-            "status": "draft",
-            "requested_status": "approved",
-            "environment": "client_and_server",
-            "dependencies": [],
-            "featured": False,
-            "file_parts": ["file_parts"],
-        }
-    ]
-
-    info(f"creating project '{data['title']}' ...")
-    result = api_post_multipart(
-        "/project", token, data, [("file_parts", pack_name, pack_bytes)]
-    )
-    project_id = result["id"]
-    write_project_id(project_id)
-    info(f"created project {project_id}")
-    info(f"  slug:     {result.get('slug')}")
-    info(f"  url:      https://modrinth.com/modpack/{result.get('slug')}")
-    info(f"  saved to: {STATE_PATH}")
-    info("")
-    info("The project is a draft. Approve it on Modrinth to make it public:")
-    info(f"  https://modrinth.com/project/{project_id}/settings")
-    return 0
+    return game_versions, loaders
 
 
 def build_pack(version_number: str) -> tuple:
@@ -286,128 +307,182 @@ def build_pack(version_number: str) -> tuple:
     return content, f"HoneyBeeSMP-{version_number}.mrpack"
 
 
+def upload_pack_version(
+    token: str, project_id: str, version_number: str, changelog: str
+) -> dict:
+    """Build the pack and upload it as a new version of the project.
+
+    The version is created with the "mrpack" loader and the pack's own
+    loader in the mrpack_loaders field. That is what makes Modrinth treat
+    the file as a modpack rather than as a jar, and it is what the client
+    needs in order to install it.
+    """
+    index = load_index()
+    game_versions, loaders = pack_versions(index)
+    pack_bytes, pack_name = build_pack(version_number)
+
+    data = {
+        "project_id": project_id,
+        "file_parts": [pack_name],
+        "version_number": version_number,
+        "version_title": f"{index.get('name', 'HoneyBeeSMP')} {version_number}",
+        "version_body": changelog,
+        "dependencies": [],
+        "release_channel": "release",
+        "loaders": ["mrpack"],
+        "mrpack_loaders": loaders,
+        "game_versions": game_versions,
+        "environment": "client_and_server",
+        "featured": False,
+        "status": "listed",
+    }
+
+    info(f"uploading version {version_number} ...")
+    result = api_post_multipart(
+        "/version",
+        token,
+        data,
+        [("file_parts", pack_name, pack_bytes)],
+        v3=True,
+    )
+    info(f"  version id: {result.get('id')}")
+    return result
+
+
+def point_content_at(token: str, project_id: str, version_id: str) -> None:
+    """Tell the project which version of the pack players need.
+
+    This is what the client resolves when a player clicks play, and what
+    it compares against to decide whether the player has an out-of-date
+    instance. Moving it to a new version is what pushes the update.
+    """
+    api_json(
+        "PATCH",
+        f"/project/{project_id}",
+        token,
+        {
+            "minecraft_java_server": {
+                "address": server_address(),
+                "content": {"kind": "modpack", "version_id": version_id},
+            }
+        },
+        v3=True,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Commands
+# ---------------------------------------------------------------------------
+
+
+def cmd_create(args) -> int:
+    token = read_token()
+    if os.path.exists(STATE_PATH) and not args.force:
+        info(f"project already exists: {read_project_id()}")
+        return 0
+
+    index = load_index()
+    version_number = index.get("versionId", "1.0.0")
+    body, summary = read_description()
+
+    info(f"creating project '{SERVER['slug']}' ...")
+    project = api_json(
+        "PUT",
+        "/project",
+        token,
+        {
+            "base": {
+                "name": SERVER["name"],
+                "slug": SERVER["slug"],
+                "summary": summary,
+                "description": body,
+                "requested_status": "approved",
+                "organization_id": None,
+            },
+            "minecraft_server": {
+                "max_players": max_players(),
+                "country": SERVER["country"],
+                "region": SERVER["region"],
+                "languages": SERVER["languages"],
+            },
+            "minecraft_java_server": {
+                "address": server_address(),
+            },
+        },
+        v3=True,
+    )
+    project_id = project["id"]
+    write_project_id(project_id)
+    info(f"created project {project_id}")
+    info(f"  slug:     {SERVER['slug']}")
+    info(f"  address:  {server_address()}")
+    info(f"  saved to: {STATE_PATH}")
+    info("")
+
+    # The pack is the content the server serves, so it has to be there
+    # before the project is worth submitting for review.
+    version = upload_pack_version(
+        token, project_id, version_number, f"First release: {version_number}."
+    )
+    point_content_at(token, project_id, version["id"])
+    info(f"  content:  pack {version_number} ({version['id']})")
+    info("")
+    info("The project is a draft. Approve it on Modrinth to make it public:")
+    info(f"  https://modrinth.com/project/{project_id}/settings")
+    return 0
+
+
 def cmd_publish(args) -> int:
     token = read_token()
     project_id = read_project_id()
 
     index = load_index()
     version_number = index.get("versionId", "1.0.0")
-    deps = index.get("dependencies", {})
-    game_versions = [deps["minecraft"]] if "minecraft" in deps else ["1.21.1"]
-    loaders = [k for k in deps if k not in ("minecraft",)] or ["neoforge"]
 
-    # Build the pack.
-    pack_bytes, pack_name = build_pack(version_number)
-
-    # A draft project cannot have versions uploaded to it - the API
-    # answers 404 for the create route. That is not a failure: it means
-    # the project has not been approved for review yet. Say so and stop,
-    # rather than failing the deploy that triggered this. The pack goes
-    # out on the next live deploy once the project is approved.
-    project = api_get(f"/project/{project_id}", token)
-    if project.get("status") == "draft":
-        info(
-            f"skipped: the project is still a draft on Modrinth.\n"
-            f"  Versions cannot be uploaded until a moderator approves it.\n"
-            f"  The pack will go out on the next live deploy after that."
+    project = api_get(f"/project/{project_id}", token, v3=True)
+    types = project.get("project_types") or []
+    if "minecraft_java_server" not in types:
+        die(
+            f"project {project_id} is a {', '.join(types) or 'unknown'} project,\n"
+            f"  not a server project. This script publishes to a server\n"
+            f"  project, whose content is the pack."
         )
-        return 0
 
-    # The version must not already be published.
-    existing = api_get(
-        f"/project/{project_id}/version", token, missing_ok=True
-    )
-    if existing is None:
-        info(
-            f"skipped: project {project_id} has no versions yet.\n"
-            f"  Versions cannot be uploaded to it until it is approved."
-        )
-        return 0
-
-    for version in existing:
-        if version.get("version_number") == version_number:
-            # Not a failure: the deploy publishes whatever the repo says,
-            # and the repo's version has not moved on, so there is simply
-            # nothing new to send.
-            info(
-                f"version {version_number} is already published - "
-                f"nothing to do"
-            )
+    # What the server is currently serving. If that is already the version
+    # the repo describes, there is nothing to publish.
+    content = (project.get("minecraft_java_server") or {}).get("content") or {}
+    current_id = content.get("version_id")
+    if current_id:
+        current = api_get(f"/version/{current_id}", token, missing_ok=True, v3=True)
+        if current and current.get("version_number") == version_number:
+            info(f"version {version_number} is already published - nothing to do")
             return 0
 
-    data = {
-        "name": f"{index.get('name', 'HoneyBeeSMP')} {version_number}",
-        "version_number": version_number,
-        "changelog": args.changelog or f"Modpack {version_number}",
-        "game_versions": game_versions,
-        "loaders": loaders,
-        "version_type": "release",
-        # A version is created as a draft too, then published separately.
-        "status": "draft",
-        "is_draft": True,
-        "requested_status": "approved",
-        "environment": "client_and_server",
-        "dependencies": [
-            {
-                "project_id": entry["project_id"],
-                "version_id": entry.get("version_id"),
-                "file_name": entry.get("file_name"),
-                "dependency_type": "embedded",
-            }
-            for entry in args.embedded
-        ]
-        if args.embedded
-        else [],
-    }
-
-    info(f"publishing version {version_number} ...")
-    result = api_post_multipart(
-        f"/project/{project_id}/version",
-        token,
-        data,
-        [("file_parts", pack_name, pack_bytes)],
-        missing_ok=True,
-    )
-    if result is None:
-        info(
-            f"skipped: Modrinth would not accept a version for this project.\n"
-            f"  It is most likely still a draft. The pack will go out on the\n"
-            f"  next live deploy once it has been approved."
-        )
-        return 0
-    info(f"published {result.get('version_number')} ({result.get('id')})")
-    info(f"  url: https://modrinth.com/modpack/{project_id}/version/{result.get('id')}")
+    changelog = args.changelog or f"Modpack {version_number}"
+    version = upload_pack_version(token, project_id, version_number, changelog)
+    point_content_at(token, project_id, version["id"])
+    info(f"published {version.get('version_number')} ({version.get('id')})")
+    info(f"  url: https://modrinth.com/server/{SERVER['slug']}")
     return 0
 
 
 def cmd_sync_description(args) -> int:
-    """Push the repo's description file to the Modrinth project.
-
-    The description lives in the repo so it is reviewed and versioned
-    like everything else, and so the Modrinth page cannot drift from
-    what we think it says.
-    """
+    """Push the repo's description file to the Modrinth project."""
     token = read_token()
     project_id = read_project_id()
-
-    path = os.path.join(PACK_DIR, "modrinth-description.md")
-    if not os.path.exists(path):
-        die(f"no description at {path}")
-    with open(path, encoding="utf-8") as fh:
-        body = fh.read().strip()
-
-    # The first line is the summary Modrinth shows in listings.
-    summary = body.splitlines()[0].lstrip("# ").strip()
+    body, summary = read_description()
 
     info(f"syncing the description to project {project_id} ...")
-    api_patch(
+    api_json(
+        "PATCH",
         f"/project/{project_id}",
         token,
         {
-            "body": body,
+            "name": SERVER["name"],
             "summary": summary,
-            "description": summary,
+            "description": body,
         },
+        v3=True,
     )
     info(f"  description: {len(body)} characters")
     info(f"  summary:     {summary[:70]}")
@@ -417,18 +492,15 @@ def cmd_sync_description(args) -> int:
 def cmd_submit(args) -> int:
     """Ask Modrinth to review the project.
 
-    A new modpack starts as a draft. The API refuses to create a project
-    that goes straight to moderation, and the version route does not exist
-    for a draft either - so the first version has to be uploaded with the
-    project, and later versions only after the project is approved.
-
-    This asks for the project to be reviewed. Once a moderator approves
-    it, the project leaves draft and the version route starts working.
+    A new project starts as a draft. Only `requested_status` can be set
+    through the API - changing `status` itself needs a permission an API
+    token does not have - so this asks for the review rather than making
+    the project public.
     """
     token = read_token()
     project_id = read_project_id()
 
-    project = api_get(f"/project/{project_id}", token)
+    project = api_get(f"/project/{project_id}", token, v3=True)
     status = project.get("status")
     requested = project.get("requested_status")
 
@@ -441,33 +513,55 @@ def cmd_submit(args) -> int:
         return 0
 
     info("submitting the project for review ...")
-    # Only requested_status can be set directly; changing `status` needs a
-    # permission an API token does not have.
-    api_patch(f"/project/{project_id}", token, {"requested_status": "approved"})
+    api_json(
+        "PATCH",
+        f"/project/{project_id}",
+        token,
+        {"requested_status": "approved"},
+        v3=True,
+    )
     info("submitted for review")
     info(f"  https://modrinth.com/project/{project_id}/settings")
     info("")
-    info("Until a moderator approves it, the project stays a draft and")
-    info("new versions cannot be uploaded. The first version goes up with")
-    info("the project itself.")
+    info("Until a moderator approves it the project stays a draft, and")
+    info("nobody but us can see it. The pack goes out as soon as it is.")
     return 0
 
 
 def cmd_status(args) -> int:
     token = read_token()
     project_id = read_project_id()
-    project = api_get(f"/project/{project_id}", token)
+    project = api_get(f"/project/{project_id}", token, v3=True)
+
     info(f"project {project.get('slug')} ({project_id})")
-    info(f"  title:    {project.get('title')}")
+    info(f"  title:    {project.get('name')}")
+    info(f"  type:     {', '.join(project.get('project_types') or [])}")
     info(f"  status:   {project.get('status')}")
-    info(f"  versions: {', '.join(project.get('game_versions', []))}")
-    info(f"  loaders:  {', '.join(project.get('loaders', []))}")
-    versions = api_get(f"/project/{project_id}/version", token)
-    if versions:
-        latest = versions[0]
-        info(f"  latest:   {latest.get('version_number')} ({latest.get('date_published','')[:10]})")
+
+    server = project.get("minecraft_server") or {}
+    java = project.get("minecraft_java_server") or {}
+    info(f"  address:  {java.get('address')}")
+    info(f"  players:  {server.get('max_players')}")
+    info(
+        f"  where:    {server.get('country')} / {server.get('region')} / "
+        f"{', '.join(server.get('languages') or [])}"
+    )
+
+    content = java.get("content") or {}
+    if content.get("kind") == "modpack":
+        info(f"  content:  modpack {content.get('project_name')}")
+        version = api_get(
+            f"/version/{content.get('version_id')}", token, missing_ok=True, v3=True
+        )
+        if version:
+            info(
+                f"  version:  {version.get('version_number')} "
+                f"({version.get('status')})"
+            )
+        else:
+            info(f"  version:  {content.get('version_id')} (not found)")
     else:
-        info("  latest:   (nothing published yet)")
+        info(f"  content:  {content.get('kind') or '(none)'}")
     return 0
 
 
@@ -475,9 +569,7 @@ def cmd_check(args) -> int:
     """Report which API scopes the token actually has.
 
     Modrinth answers each endpoint according to the token's scopes, so
-    probing them is the only way to see what is missing. The endpoints
-    used here deliberately avoid a specific project, because a draft
-    project answers 404 regardless of the token's scopes.
+    probing them is the only way to see what is missing.
     """
     token = read_token()
     info("token scopes (probed against the API):")
@@ -524,13 +616,6 @@ def cmd_check(args) -> int:
     return 0
 
 
-def load_index() -> dict:
-    if not os.path.exists(INDEX_PATH):
-        die(f"no pack index at {INDEX_PATH}")
-    with open(INDEX_PATH, encoding="utf-8") as fh:
-        return json.load(fh)
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", help="path to the repository (default: autodetected)")
@@ -542,14 +627,9 @@ def main() -> int:
 
     p = sub.add_parser("publish", help="build the pack and publish a new version")
     p.add_argument("--changelog", help="changelog text for this version")
-    p.add_argument(
-        "--embedded",
-        nargs="*",
-        help="mods to record as embedded dependencies, as project_id or project_id:version_id",
-    )
     p.set_defaults(func=cmd_publish)
 
-    p = sub.add_parser("status", help="show the project and latest version")
+    p = sub.add_parser("status", help="show the project and what it serves")
     p.set_defaults(func=cmd_status)
 
     p = sub.add_parser("submit", help="submit the project for review")

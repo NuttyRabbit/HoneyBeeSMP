@@ -1,44 +1,26 @@
-The official modpack for the **HoneyBeeSMP** Minecraft server.
+A Minecraft community server built around Create, automation and factory building.
 
-## Requirements
+## Join us
 
 | | |
 |---|---|
+| Server address | `play.honeybeesmp.co.uk` |
+| Server port | 25566 |
 | Minecraft | 1.21.1 |
 | Mod loader | NeoForge 21.1.264 |
-| Server port | 25566 |
-| Server address | `play.honeybeesmp.co.uk` |
+| Players | up to 20 |
 
-## How to install
+Click **play** and Modrinth App installs everything you need and drops you
+straight into the server. If you would rather install it yourself, grab
+the pack from the **Files** tab - it is a Modrinth pack, so Modrinth App
+and Prism Launcher both handle it, and they will offer you updates when
+the server changes.
 
-1. Open **Modrinth App** or **Prism Launcher**.
-2. Find the **HoneyBeeSMP** project and install it.
-3. Launch with Minecraft 1.21.1 and NeoForge 21.1.264.
+## What the server is
 
-The launcher handles the rest: it downloads the mods, the NeoForge version
-and the configs, and checks for updates before you play.
-
-## Staying up to date
-
-This is a **shared pack**. The server and your client run the same mods from
-the same list, so when we change something you get the same change.
-
-- Modrinth App and Prism Launcher check for a new version of the pack when
-  you launch, and offer to update.
-- If a mod changes so much that the old version is no longer compatible,
-  the pack is republished with the new one and your launcher will pick it
-  up.
-
-If you ever see a "mismatched mod list" error when connecting, you are
-running a different version of the pack to the server. Update the instance
-and try again.
-
-## What is in it
-
-27 mods, chosen to work well together rather than to be the biggest set
-possible.
-
-### Create and factory building
+A community server where the point is building things. Create is the
+centrepiece, and the mods around it turn it into a factory game rather
+than a solo one:
 
 - **Create** - belts, shafts, cogs, trains and contraptions
 - **Create: Crafts & Additions** - extra Create machines and fluids
@@ -49,7 +31,7 @@ possible.
 - **FastSuite** and **FastWorkbench** - crafting speed, so a large factory
   is not painful to run
 
-### Quality of life
+Plus a quality-of-life set so the game stays pleasant:
 
 - **EMI** - recipe viewer
 - **Jade** - block information in the world
@@ -60,25 +42,26 @@ possible.
 - **BetterF3** - the F3 debug screen
 - **No Chat Reports** - chat without the reporting system
 
-### Performance
+And a few for performance and the world itself:
 
 - **FerriteCore** - a large chunk of the frame-time saving
 - **Spark** - the profiler, so you can see where the time goes
 - **AntiXray** - stops ore and cave reveals through the server
-
-### Exploration and world generation
-
 - **Terralith** - better terrain, caves and biomes
 - **Xaero's Minimap** - minimap and waypoints
 
-## Notes
+27 mods in all, chosen to work well together rather than to be the biggest
+set possible.
 
-- A few mods in this pack are server-only. You do not need to install
-  anything extra - the launcher works out which files belong on your
-  machine from the pack itself.
-- The pack carries our server configs, so everyone plays with the same
-  settings. `config/` and `defaultconfigs/` are marked as editable, so you
-  can change your own copy without it affecting anyone else.
+## One pack for everyone
+
+The server and your client run the same mods from the same list, so
+everything you build works for everyone else too. When we change
+something, your launcher offers you the new version before you play.
+
+The pack carries our server configs as well, so everyone plays with the
+same settings. `config/` and `defaultconfigs/` are marked as editable, so
+you can change your own copy without it affecting anyone else.
 
 ## Reporting problems
 

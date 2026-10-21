@@ -4,6 +4,10 @@ This directory is a [Modrinth pack](https://support.modrinth.com/en/articles/880
 It is the **single source of truth** for which mods we run, on both the
 server and the players' clients.
 
+It is published to Modrinth as the content of our
+[server project](https://modrinth.com/server/honeybeesmp), so a player who
+clicks play gets exactly this pack installed, and is told when it changes.
+
 ## What is in the pack
 
 27 mods, chosen to be a coherent set rather than the biggest one possible.

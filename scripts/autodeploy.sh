@@ -79,8 +79,9 @@ fi
 
 echo "==> new commit on $BRANCH: $(git rev-parse --short "$DEPLOYED") -> $(git rev-parse --short "$REMOTE")"
 
-# update.sh takes the deploy lock itself, unless we tell it we already
-# hold it. We must not hold it across the call, or the child would
-# inherit the held descriptor and block waiting for itself.
-exec 9>&-
-LOCK_HELD=1 sh "$REPO_ROOT/scripts/update.sh" "$ENV" all
+# Hand the lock down to update.sh as fd 9 and leave it open. The lock
+# belongs to the open file description, so the child shares it and its
+# own flock on fd 9 succeeds immediately. Crucially, the lock stays held
+# for the whole deploy - if we closed fd 9 before calling, the lock would
+# be released and a second deploy could start alongside this one.
+sh "$REPO_ROOT/scripts/update.sh" "$ENV" all

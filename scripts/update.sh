@@ -40,16 +40,11 @@ esac
 # deploy checks out "main". If they ran together they would fight over
 # the checkout and could deploy the wrong branch to the wrong server.
 #
-# The lock is re-entrant. autodeploy.sh already holds it and calls this
-# script as a child; the child inherits the held descriptor, so taking the
-# lock again on a fresh descriptor would block waiting for its own parent.
-# We detect that case and skip taking the lock.
-#
-# How we detect it: the parent passes LOCK_HELD=1 in the environment.
-if [ "${LOCK_HELD:-0}" = "1" ]; then
-	echo "    (deploy lock already held by the caller)"
-else
-	exec 9>&-
+# If the caller already holds the lock it passes it down as fd 9, and
+# flock on an inherited descriptor succeeds immediately - the lock belongs
+# to the open file description, which the child shares. So we try that
+# first, and only take a lock of our own if there is no inherited one.
+if ! flock -n 9 2>/dev/null; then
 	LOCK=/var/lock/honeybeesmp-deploy.lock
 	if ! exec 9>"$LOCK" 2>/dev/null; then
 		exec 9>"/tmp/honeybeesmp-deploy.lock"

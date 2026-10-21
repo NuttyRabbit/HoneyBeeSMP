@@ -52,6 +52,24 @@ jobs:
         run: |
           set -euo pipefail
 
+          # Trim whitespace from the secrets. GitHub's secret boxes keep
+          # the trailing newline when you paste from a terminal, and a
+          # host with a trailing space makes SSH fail with "hostname
+          # contains invalid characters" (exit 255) before it even tries
+          # to connect - so the server logs nothing and the cause is
+          # invisible.
+          trim() {
+            local v="$1"
+            v="${v#"${v%%[![:space:]]*}"}"
+            v="${v%"${v##*[![:space:]]}"}"
+            printf '%s' "$v"
+          }
+          DEPLOY_HOST=$(trim "$DEPLOY_HOST")
+          DEPLOY_USER=$(trim "$DEPLOY_USER")
+          DEPLOY_REPO_PATH=$(trim "$DEPLOY_REPO_PATH")
+          DEPLOY_SSH_KNOWN_HOSTS=$(trim "${DEPLOY_SSH_KNOWN_HOSTS:-}")
+          export DEPLOY_HOST DEPLOY_USER DEPLOY_REPO_PATH DEPLOY_SSH_KNOWN_HOSTS
+
           # Fail with a clear message rather than a confusing SSH error.
           missing=""
           for var in DEPLOY_HOST DEPLOY_USER DEPLOY_REPO_PATH SSH_PRIVATE_KEY; do
@@ -62,6 +80,29 @@ jobs:
           if [ -n "$missing" ]; then
             echo "::error::Missing repository secret(s):$missing"
             echo "Add them under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+          # Show the shape of the values without leaking them, so a stray
+          # character or a wrong value is obvious.
+          echo "DEPLOY_HOST has ${#DEPLOY_HOST} characters, DEPLOY_USER has ${#DEPLOY_USER}"
+          if ! printf '%s' "$DEPLOY_HOST" | grep -qE '^[A-Za-z0-9._-]+$'; then
+            echo "::error::DEPLOY_HOST contains characters that are not valid in a hostname."
+            echo "::error::It should be just the address, for example 132.145.16.69"
+            exit 1
+          fi
+
+          # Can we even reach port 22 from here? Test it directly, so a
+          # network problem is reported as a network problem rather than
+          # a generic SSH error.
+          echo "==> testing TCP connectivity to $DEPLOY_HOST:22"
+          if timeout 15 bash -c "exec 3<>/dev/tcp/$DEPLOY_HOST/22" 2>/dev/null; then
+            echo "    port 22 is reachable"
+          else
+            echo "::error::Cannot reach $DEPLOY_HOST port 22 from the runner."
+            echo "::error::The runner is on GitHub's infrastructure, so the server's"
+            echo "::error::network firewall (or cloud security list) must allow port 22"
+            echo "::error::from the internet, not just from your own machine."
             exit 1
           fi
 
@@ -96,7 +137,7 @@ jobs:
           # the host and strict checking fails with "No ED25519 host key
           # is known". If the secret we were given is missing the
           # hostname, add it rather than failing.
-          if [ -n "${DEPLOY_SSH_KNOWN_HOSTS:-}" ]; then
+          if [ -n "$DEPLOY_SSH_KNOWN_HOSTS" ]; then
             case "$DEPLOY_SSH_KNOWN_HOSTS" in
             "$DEPLOY_HOST"*) echo "$DEPLOY_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts ;;
             ssh-*|ecdsa-*) echo "$DEPLOY_HOST $DEPLOY_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts ;;
@@ -131,7 +172,6 @@ jobs:
             if [ "$rc" -eq 255 ]; then
               echo "::error::Could not connect to $DEPLOY_USER@$DEPLOY_HOST over SSH (exit 255)."
               echo "::error::Check that:"
-              echo "::error::  - the server is reachable on port 22 from the runner"
               echo "::error::  - the deploy key is in the server's ~/.ssh/authorized_keys"
               echo "::error::  - the known_hosts entry below matches the server's host key"
             else

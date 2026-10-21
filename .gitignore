@@ -17,14 +17,20 @@
 /discord-bot
 
 # --- Minecraft server data (backed up separately) ---------------------------
+# These are the *installed* server files on the machine, not the config we
+# author. The configuration we author lives in minecraft/ and IS tracked.
 servers/
 world/
 world_nether/
 world_the_end/
 libraries/
-mods/
 *.jar
 crash-reports/
+# Mods are installed at runtime; we track the list in
+# minecraft/mods/mods.manifest instead of the jar files themselves.
+/mods/
+# (but not our own minecraft/ directory)
+!/minecraft/
 
 # --- Crafty panel -----------------------------------------------------------
 crafty/
@@ -67,7 +73,10 @@ tmp/
 node_modules/
 .venv/
 venv/
-env/
+# A Python virtualenv is called "env" - but ours is minecraft/env, which
+# holds per-environment server settings and must be tracked.
+/env/
+!/minecraft/env/
 __pycache__/
 *.py[cod]
 .pytest_cache/

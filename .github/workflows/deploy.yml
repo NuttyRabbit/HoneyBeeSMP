@@ -1,0 +1,73 @@
+name: deploy
+
+# A push to main updates the LIVE server; a push to develop updates the
+# DEV server. The workflow connects to the server over SSH and runs
+# scripts/update.sh there, which pulls, checks and deploys.
+#
+# First-time setup (once per repo):
+#   1. Add an SSH private key as a repository secret named DEPLOY_SSH_KEY.
+#   2. Add the server's address as DEPLOY_HOST, the user as DEPLOY_USER.
+#   3. Add the repo path on the server as DEPLOY_REPO_PATH.
+#   Run scripts/install-ci-key.sh on the server to generate the key pair
+#   and print the values to paste in.
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Which environment to deploy
+        required: true
+        default: live
+        type: choice
+        options: [live, dev]
+
+# Two deployments running at once would fight over the server's git
+# checkout, so only one runs at a time.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Deploy to the server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_REPO_PATH: ${{ secrets.DEPLOY_REPO_PATH }}
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          # develop deploys to the dev environment, main to live.
+          TARGET_ENV: ${{ github.ref_name == 'main' && 'live' || 'dev' }}
+        run: |
+          set -euo pipefail
+
+          # The private key is provided as a secret; write it out with the
+          # permissions SSH insists on.
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          # Pin the server's host key so we cannot be tricked by a
+          # man-in-the-middle. Set DEPLOY_SSH_KNOWN_HOSTS to the contents
+          # of the server's /etc/ssh/ssh_host_ed25519_key.pub.
+          if [ -n "${DEPLOY_SSH_KNOWN_HOSTS:-}" ]; then
+            printf '%s\n' "$DEPLOY_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          fi
+
+          echo "==> deploying $TARGET_ENV from ${{ github.ref_name }} to $DEPLOY_HOST"
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "set -euo pipefail; cd '$DEPLOY_REPO_PATH'; sh scripts/update.sh '$TARGET_ENV' all"
+
+          echo "==> deploy finished"

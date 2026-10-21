@@ -1,0 +1,19 @@
+# HoneyBeeSMP — Minecraft mods
+#
+# One mod per line, in the format:
+#
+#     <mod-file-name>.jar  <download-url>
+#
+# The deploy script downloads any mod listed here that is missing from the
+# target server, and removes mods that are no longer listed. This keeps the
+# dev and live servers on exactly the same mod set, promoted through git.
+#
+# Lines starting with '#' are comments. Blank lines are ignored.
+#
+# A mod is installed by adding its line here, then running:
+#     ./scripts/deploy.sh minecraft <env>
+#
+# Example:
+#   create-1.21.1-1.0.0.jar  https://example.com/create-1.21.1-1.0.0.jar
+#
+# Currently no mods are installed.

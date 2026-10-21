@@ -93,7 +93,7 @@ and try again.
 
 ## What is in the pack
 
-65 mods, chosen to work well together rather than to be the biggest set
+69 mods, chosen to work well together rather than to be the biggest set
 possible.
 
 ### Create and factory building
@@ -129,8 +129,11 @@ possible.
 
 - **FerriteCore** - a large chunk of the frame-time saving
 - **Sodium** - rendering performance
+- **ImmediatelyFast** - rendering performance for machines that struggle
+  with Sodium alone
 - **More Culling** - culls entities you cannot see
 - **Continuity** - connected textures, so Create looks far better
+- **Entity Texture Features** - the same for entities
 - **Lithium** and **ModernFix** - tick and memory performance
 - **Noisium** - fewer random ticks, which matters on a server full of
   machinery
@@ -159,6 +162,7 @@ pack itself.
 
 - **LuckPerms** - permissions
 - **Open Parties and Claims** - claims, parties and grief protection
+- **Simple Voice Chat** - proximity voice, in game
 - **KubeJS** - server-side scripting
 
 The pack carries our server configs, so everyone plays with the same

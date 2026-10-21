@@ -10,7 +10,7 @@ clicks play gets exactly this pack installed, and is told when it changes.
 
 ## What is in the pack
 
-65 mods, chosen to be a coherent set rather than the biggest one possible.
+69 mods, chosen to be a coherent set rather than the biggest one possible.
 
 ### Create and factory building
 
@@ -38,6 +38,7 @@ skips them and the server still installs them.
 |---|---|
 | LuckPerms | Permissions. |
 | Open Parties and Claims | Claims, parties and grief protection. |
+| Simple Voice Chat | Proximity voice. The live server is on 24454, the dev server on 24455 - they run in the same container and cannot share a port. |
 | KubeJS | Server-side scripting. |
 | Lithium | Tick performance. |
 | ModernFix | Memory and startup performance. |
@@ -72,6 +73,9 @@ skips them and the server still installs them.
 | Sodium | Rendering performance. |
 | More Culling | Culls entities you cannot see. |
 | Continuity | Connected textures - Create looks far better with them. |
+| Entity Texture Features | The same for entities, which is what Continuity covers for blocks. |
+| ImmediatelyFast | Rendering performance, for machines that struggle with Sodium alone. |
+| Curios | Extra equipment slots, and how a backpack ends up wearable. |
 
 ### Exploration and world generation
 
@@ -111,7 +115,7 @@ what a player installs - and they can never drift apart.
 The pack also records a SHA-512 hash for every file, so a download that is
 corrupted or tampered with is caught rather than silently installed.
 
-Of the 65 mods, 58 are installed on the server and 50 on players' clients.
+Of the 69 mods, 60 are installed on the server and 54 on players' clients.
 Mods that are on neither, or on both, sit in between - the pack records
 each file's split exactly.
 
@@ -230,7 +234,7 @@ follow:
 
 ### A note on the pack's size
 
-65 mods is a lot, and some of them pull in a fair bit underneath - Create
+69 mods is a lot, and some of them pull in a fair bit underneath - Create
 Ore Excavation needs Sinytra Connector and Forgified Fabric API to run on
 NeoForge, which is how it ships for 1.21.1. If the server starts slowly
 or a mod misbehaves, that pairing is worth looking at first.

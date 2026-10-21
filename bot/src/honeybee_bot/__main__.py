@@ -25,6 +25,8 @@ import sys
 import discord
 from discord.ext import commands
 
+from . import setup as server_setup
+
 log = logging.getLogger("honeybee")
 
 
@@ -44,6 +46,12 @@ class Config:
         self.server_port = int(os.environ.get("SERVER_PORT", "25566"))
         # How often to check whether the player list has changed.
         self.poll_seconds = int(os.environ.get("POLL_SECONDS", "30"))
+        # Where to put the slash commands: "guild" for this server only,
+        # or "global" for every server the bot is in. Guild commands appear
+        # straight away; global ones can take an hour to reach Discord.
+        self.command_scope = os.environ.get("DISCORD_COMMAND_SCOPE", "guild").strip().lower()
+        if self.command_scope not in ("guild", "global"):
+            raise SystemExit("error: DISCORD_COMMAND_SCOPE must be guild or global")
 
     @property
     def address(self) -> str:
@@ -156,16 +164,50 @@ class HoneyBee(commands.Bot):
     def __init__(self, config: Config) -> None:
         intents = discord.Intents.default()
         intents.guilds = True
+        # Needed so that the bot can hand out the Member role when
+        # somebody joins. Discord allows this for bots with the
+        # Administrator permission.
+        intents.members = True
         # We want to notice when the player count changes, and the server
         # list ping gives us that without any message intents.
         super().__init__(command_prefix=commands.when_mentioned, intents=intents)
         self.config = config
-        self._last_players: set[str] = set()
         self._status_message: discord.Message | None = None
 
+        # discord.py does not pick up slash commands that are defined as
+        # methods on a Bot subclass, so they are added to the tree here.
+        if config.command_scope == "global":
+            self.tree.add_command(self.status)
+            self.tree.add_command(self.invite)
+            self.tree.add_command(self.setup)
+        else:
+            guild = discord.Object(id=config.guild_id)
+            self.tree.add_command(self.status, guild=guild)
+            self.tree.add_command(self.invite, guild=guild)
+            self.tree.add_command(self.setup, guild=guild)
+
     async def setup_hook(self) -> None:
-        await self.tree.sync(guild=discord.Object(id=self.config.guild_id))
-        log.info("commands registered")
+        if self.config.command_scope == "global":
+            await self.tree.sync()
+        else:
+            await self.tree.sync(guild=discord.Object(id=self.config.guild_id))
+        log.info("commands registered (%s)", self.config.command_scope)
+
+    # -- joining ------------------------------------------------------------
+
+    async def on_member_join(self, member: discord.Member) -> None:
+        """Give new members the Member role."""
+        guild = member.guild
+        if guild.id != int(self.config.guild_id):
+            return
+        role = server_setup.find_role(guild, server_setup.MEMBER_ROLE)
+        if role is None or role in member.roles:
+            return
+        try:
+            await member.add_roles(role, reason="Welcome to the server")
+            log.info("gave %s the %s role", member, role.name)
+        except discord.HTTPException as exc:
+            log.warning("could not give %s the Member role: %s", member, exc)
 
     # -- commands -----------------------------------------------------------
 
@@ -203,6 +245,36 @@ class HoneyBee(commands.Bot):
             f"will install it for you from the server's Modrinth page."
         )
 
+    @discord.app_commands.command(
+        name="setup",
+        description="Set up the server's channels, roles and permissions",
+    )
+    @discord.app_commands.default_permissions(manage_guild=True)
+    async def setup(self, interaction: discord.Interaction) -> None:
+        """Create the channels and roles the server needs.
+
+        This can be run as often as you like: anything that is already
+        there is kept and repaired rather than made again.
+        """
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        guild = interaction.guild
+        if guild is None:
+            await interaction.followup.send("This only works in a server.", ephemeral=True)
+            return
+
+        try:
+            await server_setup.apply_setup(guild)
+        except discord.HTTPException as exc:
+            log.exception("the setup failed")
+            await interaction.followup.send(f"The setup failed: {exc}", ephemeral=True)
+            return
+
+        await interaction.followup.send(
+            "The server is set up: the channels, the roles and the "
+            "permissions are all in place.",
+            ephemeral=True,
+        )
+
     # -- the status channel -------------------------------------------------
 
     async def status_channel(self) -> discord.TextChannel | None:
@@ -211,25 +283,10 @@ class HoneyBee(commands.Bot):
         channel = self.get_channel(int(self.config.status_channel_id))
         return channel if isinstance(channel, discord.TextChannel) else None
 
-    async def refresh_status(self) -> None:
-        """Post or update the player list in the status channel."""
-        channel = await self.status_channel()
-        if channel is None:
-            return
-
-        try:
-            status = await server_status(
-                self.config.server_address, self.config.server_port
-            )
-        except Exception as exc:
-            log.warning("could not reach the Minecraft server: %s", exc)
-            return
-
-        players = status.get("players", {})
-        online = players.get("online", 0)
-        maximum = players.get("max", 0)
-        version = status.get("version", {}).get("name", "unknown")
-
+    async def _update_embed(
+        self, channel: discord.TextChannel, online: int, maximum: int, version: str
+    ) -> None:
+        """Post the status embed, or update the one that is already there."""
         embed = discord.Embed(
             title="HoneyBeeSMP",
             colour=discord.Colour(0xFFC107),
@@ -248,35 +305,61 @@ class HoneyBee(commands.Bot):
 
         self._status_message = await channel.send(embed=embed)
 
-    async def poll(self) -> None:
-        """Watch the player list, and say when somebody joins or leaves."""
-        while True:
-            await self.refresh_status()
-            await asyncio.sleep(self.config.poll_seconds)
+    async def watch(self) -> None:
+        """Keep the status channel up to date, and say who came and went."""
+        channel = await self.status_channel()
+        if channel is None:
+            return
 
-    async def announce_changes(self) -> None:
-        """Post when the player list changes."""
+        last_count: int | None = None
+        last_names: set[str] = set()
+
         while True:
-            await asyncio.sleep(self.config.poll_seconds)
-            channel = await self.status_channel()
-            if channel is None:
-                continue
             try:
                 status = await server_status(
                     self.config.server_address, self.config.server_port
                 )
-            except Exception:
+            except Exception as exc:
+                log.warning("could not reach the Minecraft server: %s", exc)
+                await asyncio.sleep(self.config.poll_seconds)
                 continue
 
-            names = set(status.get("players", {}).get("sample", []) or [])
-            joined = names - self._last_players
-            left = self._last_players - names
-            self._last_players = names
+            players = status.get("players", {})
+            online = int(players.get("online", 0))
+            maximum = int(players.get("max", 0))
+            version = status.get("version", {}).get("name", "unknown")
+            # The server only lists a handful of names, so the names are a
+            # hint and the player count is the reliable part.
+            names = set(players.get("sample") or [])
 
-            for name in joined:
-                await channel.send(f"{name} joined the server.")
-            for name in left:
-                await channel.send(f"{name} left the server.")
+            if last_count is not None and online != last_count:
+                await self._announce(channel, online - last_count, names, last_names)
+            last_count = online
+            last_names = names
+
+            await self._update_embed(channel, online, maximum, version)
+            await asyncio.sleep(self.config.poll_seconds)
+
+    async def _announce(
+        self, channel: discord.TextChannel, change: int, names: set[str], last_names: set[str]
+    ) -> None:
+        """Say that somebody joined or left, if we can tell who."""
+        if change > 0:
+            arrived = names - last_names
+            if len(arrived) == change:
+                await channel.send(f"{', '.join(sorted(arrived))} joined the server.")
+            else:
+                await channel.send(
+                    f"{change} player{'s' if change > 1 else ''} joined the server."
+                )
+        else:
+            left = last_names - names
+            if len(left) == -change:
+                await channel.send(f"{', '.join(sorted(left))} left the server.")
+            else:
+                await channel.send(
+                    f"{-change} player{'s' if change < -1 else ''} left the server."
+                )
 
 
 async def main() -> None:
@@ -290,7 +373,7 @@ async def main() -> None:
     async with bot:
         # The status channel only matters if it has been set.
         if config.status_channel_id:
-            bot.loop.create_task(bot.poll())
+            bot.loop.create_task(bot.watch())
         await bot.start(config.token)
 
 

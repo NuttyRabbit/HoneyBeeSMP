@@ -23,6 +23,12 @@ works for everyone else too.
 - [Staying up to date](#staying-up-to-date)
 - [What is in the pack](#what-is-in-the-pack)
 
+**Discord**
+
+- [Channels](#channels)
+- [Roles](#roles)
+- [The bot](#the-bot)
+
 **Working on it**
 
 - [This repository](#this-repository)
@@ -168,6 +174,47 @@ pack itself.
 The pack carries our server configs, so everyone plays with the same
 settings. `config/` and `defaultconfigs/` are marked as editable, so you can
 change your own copy without it affecting anyone else.
+
+---
+
+# Discord
+
+The Discord server is set up by the bot, from code in this repository, so
+it can be rebuilt or changed at any time.
+
+## Channels
+
+| Category | Channels |
+|---|---|
+| **Information** | `rules`, `announcements`, `server-info` |
+| **Community** | `general`, `media`, `builds` |
+| **Minecraft** | `help`, `whitelist`, `bugs` |
+| **Staff** | `staff-chat`, `logs` |
+| **Voice** | `lounge`, `gaming`, `afk` |
+
+`rules` and `announcements` are read-only for ordinary members, and the
+whole `Staff` category is hidden from them.
+
+## Roles
+
+From the top down:
+
+| Role | What it is for |
+|---|---|
+| `HoneyBee` | the bot |
+| `Owner` | the server owner |
+| `Admin` | runs the server |
+| `Moderator` | keeps the community in order |
+| `Builder` | trusted on the Minecraft server |
+| `Member` | everybody else, handed out when they join |
+
+## The bot
+
+The bot answers `/status` and `/invite`, and `/setup` builds the channels,
+roles and permissions. It runs on the server under systemd, so it starts
+on boot and restarts if it falls over.
+
+See [`bot/README.md`](bot/README.md) for the details.
 
 ---
 
@@ -524,6 +571,10 @@ make modpack-bump      # bump the pack version in the repo
 make modpack-status    # what is published
 make modpack-verify    # do the server's mods match the pack?
 make whitelist         # who may join the dev server
+
+# Discord
+sudo ./scripts/install-bot.sh live    # bot venv and systemd unit
+./scripts/discord-setup.py           # channels, roles and permissions
 
 # housekeeping
 make status            # git, services, and repo-vs-live drift

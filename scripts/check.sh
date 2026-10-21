@@ -20,12 +20,34 @@ ok()   { note "OK  " "$1"; }
 bad()  { note "FAIL" "$1"; fail=1; }
 
 echo "== check: secrets =="
-# Refuse anything that looks like a live credential.
+# Refuse anything that looks like a live credential, by filename.
 if git ls-files | grep -qiE '(^|/)\.env$|\.pem$|\.key$|credential|default-creds|\.sqlite'; then
 	bad "a tracked file looks like a secret:"
 	git ls-files | grep -iE '(^|/)\.env$|\.pem$|\.key$|credential|default-creds|\.sqlite' | sed 's/^/       /'
 else
-	ok "no secret-looking files tracked"
+	ok "no secret-looking file names tracked"
+fi
+
+# And by content. A filename check alone misses a credential pasted into
+# a README or a script, which matters now that this repo is public.
+#
+# These are the shapes of the secrets this project actually uses:
+#   - a Modrinth personal access token   mrp_...
+#   - an SSH private key                 -----BEGIN OPENSSH PRIVATE KEY-----
+#   - a Google API client secret         GOCSPX-...
+#   - a Discord bot token                a long base64-ish string
+# The last one is deliberately loose, so it only matches when it is
+# clearly labelled as a token.
+SECRET_PATTERN='mrp_[A-Za-z0-9]{40,}|BEGIN (OPENSSH|RSA|EC|PGP) PRIVATE KEY|GOCSPX-[A-Za-z0-9_-]{20,}|DISCORD_TOKEN=[A-Za-z0-9._-]{40,}'
+# Some files legitimately contain the *shape* of a secret - the workflow
+# prints the placeholder in an error message, and the modpack lists
+# download URLs. Skip those.
+SAFE_CONTENT='mods/mods\.manifest|modrinth-description\.md|check\.sh|deploy\.yml|install-ci-key\.sh'
+if git grep -IEn "$SECRET_PATTERN" -- . 2>/dev/null | grep -vE "$SAFE_CONTENT" | head -10 | grep -q .; then
+	bad "a tracked file contains something that looks like a credential:"
+	git grep -IEn "$SECRET_PATTERN" -- . 2>/dev/null | grep -vE "$SAFE_CONTENT" | head -10 | cut -c1-100 | sed 's/^/       /'
+else
+	ok "no credential-shaped content in tracked files"
 fi
 
 echo "== check: file sizes =="

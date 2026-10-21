@@ -9,7 +9,7 @@ tooling that deploys them.
 | **Live site** | https://honeybeesmp.co.uk |
 | **Dev site** | https://dev.honeybeesmp.co.uk |
 | **Server panel** | https://panel.honeybeesmp.co.uk |
-| **Repo** | https://github.com/NuttyRabbit/HoneyBeeSMP (private) |
+| **Repo** | https://github.com/NuttyRabbit/HoneyBeeSMP |
 | **Server** | `ssh ubuntu@132.145.16.69` (repo at `~/honeybeesmp`) |
 
 ---
@@ -358,7 +358,18 @@ make crafty-logs       # tail the panel logs
 ```
 
 The Crafty panel database holds the panel admin password, so treat the
-server as sensitive.
+server as sensitive. This repo is public, so anyone can see how the
+deployment works - but the credentials it needs are not in here. Keep
+these out of git:
+
+- the Crafty panel admin password
+- the Modrinth API token (`~/.config/modrinth/token` on the server)
+- the Google Cloud / Drive client secret (`~/.config/rclone/rclone.conf`)
+- the Discord bot token (`bot/.env` on the server)
+- the SSH key that CI uses to reach the server
+
+`scripts/check.sh` runs on every push and fails if anything that looks
+like a credential gets tracked.
 
 ---
 

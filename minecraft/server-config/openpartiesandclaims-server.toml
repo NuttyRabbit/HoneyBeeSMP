@@ -1,0 +1,25 @@
+# Open Parties and Claims — server settings.
+#
+# The mod writes a config on first run with every option and a comment
+# explaining it. This file is not a copy of that: it is the handful of
+# settings we want changed, merged into the mod's own config by
+# scripts/server-config.py on every deploy.
+#
+# permissionSystem = "luck_perms"
+#   We run LuckPerms, so the claims, party and admin-mode permissions
+#   (xaero.pac_*) are managed there. The default, "prometheus", is
+#   Open Parties and Claims' own built-in permission system, which
+#   nothing else can see.
+#
+# primaryPartySystem = "default"
+#   The default, "argonauts_guilds", only works if the Argonauts Guilds
+#   addon is installed. We do not run it, so use the built-in party
+#   system.
+#
+# There is deliberately no PvP setting here. Open Parties and Claims has
+# no PvP handling of its own - that all lives in the "PvP Support"
+# addon, which is not in our modpack. PvP is turned off in
+# server.properties instead.
+
+permissionSystem = "luck_perms"
+primaryPartySystem = "default"

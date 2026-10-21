@@ -56,8 +56,11 @@ And a few for performance and the world itself:
 
 - **FerriteCore** - a large chunk of the frame-time saving
 - **Sodium** - rendering performance
+- **ImmediatelyFast** - rendering performance for machines that struggle
+  with Sodium alone
 - **More Culling** - culls entities you cannot see
 - **Continuity** - connected textures, so Create looks far better
+- **Entity Texture Features** - the same for entities
 - **Lithium** and **ModernFix** - tick and memory performance
 - **Spark** - the profiler, so you can see where the time goes
 - **AntiXray** - stops ore and cave reveals through the server
@@ -67,10 +70,10 @@ And a few for performance and the world itself:
   the world map
 
 The server also runs LuckPerms for permissions, Open Parties and Claims so
-you can protect your builds, and KubeJS. Those are server-side only - you
-do not need them.
+you can protect your builds, Simple Voice Chat for proximity voice, and
+KubeJS. Those are server-side only - you do not need them.
 
-65 mods in all, chosen to work well together rather than to be the biggest
+69 mods in all, chosen to work well together rather than to be the biggest
 set possible.
 
 ## Reporting problems

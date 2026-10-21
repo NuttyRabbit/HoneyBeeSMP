@@ -164,16 +164,10 @@ def find_version(slug: str, game: str, loader_name: str, loader_version: str) ->
     candidates.sort(key=lambda v: v.get("date_published", ""), reverse=True)
     version = candidates[0]
 
-    if loader_version:
-        wanted = loader_version.lstrip("v")
-        if not any(
-            wanted == str(v).lstrip("v") or str(v).lstrip("v").startswith(wanted)
-            for v in version.get("loaders", [])
-        ):
-            info(
-                f"  note: {project.get('title', slug)} {version.get('version_number')} "
-                f"targets loader {version.get('loaders')}, we use {loader_version}"
-            )
+    # The query above already filtered on the loader, so the loader is
+    # right by construction. The API does not expose the *version* of the
+    # loader a build targets - a NeoForge version's loaders array holds
+    # the loader id, "neoforge" - so there is nothing more to check here.
     return project, version
 
 

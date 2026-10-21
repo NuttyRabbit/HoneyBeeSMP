@@ -56,9 +56,13 @@ PROJECT = {
     "categories": ["utility", "technology"],
     "additional_categories": [],
     "environment": ["client_and_server"],
-    "status": "listed",
-    "requested_status": "listed",
+    "client_side": "required",
+    "server_side": "required",
+    "status": "draft",
+    "is_draft": True,
     "license_id": "MIT",
+    "versions": [],
+    "initial_versions": [],
 }
 
 
@@ -134,13 +138,20 @@ def auth_header(token: str) -> dict:
 
 
 def api_post_multipart(path: str, token: str, data: dict, files: list):
-    """POST a multipart request. files is a list of (field, filename, bytes)."""
+    """POST a multipart request.
+
+    Modrinth expects the metadata as a single form field named "data"
+    holding the JSON, plus one field per uploaded file.
+
+    files is a list of (field, filename, bytes).
+    """
     boundary = "----HoneyBeeSMPModpackBoundary7d91f3a2"
     body = bytearray()
-    for key, value in data.items():
-        body += f"--{boundary}\r\n".encode()
-        body += f'Content-Disposition: form-data; name="{key}"\r\n\r\n'.encode()
-        body += json.dumps(value).encode() + b"\r\n"
+
+    body += f"--{boundary}\r\n".encode()
+    body += b'Content-Disposition: form-data; name="data"\r\n\r\n'
+    body += json.dumps(data).encode() + b"\r\n"
+
     for field, filename, content in files:
         body += f"--{boundary}\r\n".encode()
         body += (
@@ -184,14 +195,39 @@ def cmd_create(args) -> int:
     index = load_index()
     deps = index.get("dependencies", {})
     game_versions = [deps["minecraft"]] if "minecraft" in deps else ["1.21.1"]
-    loaders = [k for k in deps if k not in ("minecraft",)]
+    loaders = [k for k in deps if k not in ("minecraft",)] or ["neoforge"]
+    version_number = index.get("versionId", "1.0.0")
+
+    # Build the pack, which is uploaded as the project's first version.
+    pack_bytes, pack_name = build_pack(version_number)
 
     data = dict(PROJECT)
     data["game_versions"] = game_versions
-    data["loaders"] = loaders or ["neoforge"]
+    data["loaders"] = loaders
+    # The first version is attached in the same request. Modrinth requires
+    # the version to name the multipart part carrying the file, and the
+    # part is the "file_parts" field below.
+    data["initial_versions"] = [
+        {
+            "name": f"{index.get('name', 'HoneyBeeSMP')} {version_number}",
+            "version_number": version_number,
+            "changelog": "First release.",
+            "game_versions": game_versions,
+            "loaders": loaders,
+            "version_type": "release",
+            "status": "draft",
+            "requested_status": "approved",
+            "environment": "client_and_server",
+            "dependencies": [],
+            "featured": False,
+            "file_parts": ["file_parts"],
+        }
+    ]
 
     info(f"creating project '{data['title']}' ...")
-    result = api_post_multipart("/project", token, data, [])
+    result = api_post_multipart(
+        "/project", token, data, [("file_parts", pack_name, pack_bytes)]
+    )
     project_id = result["id"]
     write_project_id(project_id)
     info(f"created project {project_id}")
@@ -199,9 +235,24 @@ def cmd_create(args) -> int:
     info(f"  url:      https://modrinth.com/modpack/{result.get('slug')}")
     info(f"  saved to: {STATE_PATH}")
     info("")
-    info("Now publish the first version:")
-    info("  python3 scripts/publish-modpack.py publish")
+    info("The project is a draft. Publish it for review on Modrinth:")
+    info(f"  https://modrinth.com/project/{project_id}/settings")
     return 0
+
+
+def build_pack(version_number: str) -> tuple:
+    """Build the .mrpack and return (bytes, filename)."""
+    pack_path = os.path.join("/tmp", f"HoneyBeeSMP-{version_number}.mrpack")
+    info(f"building {pack_path}")
+    os.system(
+        f'python3 "{os.path.join(REPO, "scripts", "modpack.py")}" build "{pack_path}"'
+    )
+    if not os.path.exists(pack_path):
+        die("the pack was not built")
+    with open(pack_path, "rb") as fh:
+        content = fh.read()
+    os.unlink(pack_path)
+    return content, f"HoneyBeeSMP-{version_number}.mrpack"
 
 
 def cmd_publish(args) -> int:
@@ -215,15 +266,7 @@ def cmd_publish(args) -> int:
     loaders = [k for k in deps if k not in ("minecraft",)] or ["neoforge"]
 
     # Build the pack.
-    pack_path = os.path.join("/tmp", f"HoneyBeeSMP-{version_number}.mrpack")
-    info(f"building {pack_path}")
-    os.system(
-        f'python3 "{os.path.join(REPO, "scripts", "modpack.py")}" build "{pack_path}"'
-    )
-    if not os.path.exists(pack_path):
-        die("the pack was not built")
-    with open(pack_path, "rb") as fh:
-        pack_bytes = fh.read()
+    pack_bytes, pack_name = build_pack(version_number)
 
     # The project must exist and the version must not already be published.
     existing = api_get(f"/project/{project_id}/version", token)
@@ -242,8 +285,10 @@ def cmd_publish(args) -> int:
         "game_versions": game_versions,
         "loaders": loaders,
         "version_type": "release",
-        "status": "listed",
-        "requested_status": "listed",
+        # A version is created as a draft too, then published separately.
+        "status": "draft",
+        "is_draft": True,
+        "requested_status": "approved",
         "environment": "client_and_server",
         "dependencies": [
             {
@@ -263,11 +308,10 @@ def cmd_publish(args) -> int:
         f"/project/{project_id}/version",
         token,
         data,
-        [("file_parts", f"HoneyBeeSMP-{version_number}.mrpack", pack_bytes)],
+        [("file_parts", pack_name, pack_bytes)],
     )
     info(f"published {result.get('version_number')} ({result.get('id')})")
     info(f"  url: https://modrinth.com/modpack/{project_id}/version/{result.get('id')}")
-    os.unlink(pack_path)
     return 0
 
 
@@ -286,6 +330,59 @@ def cmd_status(args) -> int:
         info(f"  latest:   {latest.get('version_number')} ({latest.get('date_published','')[:10]})")
     else:
         info("  latest:   (nothing published yet)")
+    return 0
+
+
+def cmd_check(args) -> int:
+    """Report which API scopes the token actually has.
+
+    Modrinth answers each endpoint according to the token's scopes, so
+    probing them is the only way to see what is missing. The endpoints
+    used here deliberately avoid a specific project, because a draft
+    project answers 404 regardless of the token's scopes.
+    """
+    token = read_token()
+    info("token scopes (probed against the API):")
+
+    # USER_READ: GET /v2/user is the canonical "who am I" call.
+    try:
+        request = urllib.request.Request(
+            f"{API}/user", headers={"User-Agent": USER_AGENT, "Authorization": token}
+        )
+        with urllib.request.urlopen(request, timeout=30) as response:
+            code = response.status
+    except urllib.error.HTTPError as err:
+        code = err.code
+    except urllib.error.URLError:
+        code = 0
+    info(f"  {'USER_READ':<16} {'present' if code == 200 else 'MISSING'} (HTTP {code})")
+
+    # PROJECT_CREATE: a project creation with an empty body. A valid
+    # token gets a 400 about the payload; an invalid one gets 401.
+    try:
+        request = urllib.request.Request(
+            f"{API}/project",
+            data=(
+                b"--x\r\nContent-Disposition: form-data; name=\"data\"\r\n\r\n"
+                b"{\"title\":\"scope-probe\",\"description\":\"scope-probe\"}\r\n--x--\r\n"
+            ),
+            headers={
+                "User-Agent": USER_AGENT,
+                "Authorization": token,
+                "Content-Type": "multipart/form-data; boundary=x",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=30) as response:
+            code = response.status
+    except urllib.error.HTTPError as err:
+        code = err.code
+    except urllib.error.URLError:
+        code = 0
+    info(f"  {'PROJECT_CREATE':<16} {'present' if code == 400 else 'MISSING'} (HTTP {code})")
+
+    info("")
+    info("Needed for publishing: PROJECT_CREATE, VERSION_CREATE, PROJECT_WRITE")
     return 0
 
 
@@ -316,6 +413,9 @@ def main() -> int:
 
     p = sub.add_parser("status", help="show the project and latest version")
     p.set_defaults(func=cmd_status)
+
+    p = sub.add_parser("check", help="report which API scopes the token has")
+    p.set_defaults(func=cmd_check)
 
     args = parser.parse_args()
     return args.func(args)

@@ -117,7 +117,9 @@ minecraft/
 ├── mods/mods.manifest     the mod list (jars are not in git)
 └── env/
     ├── dev/env.conf       DEV server id and port
-    └── live/env.conf      LIVE server id and port
+    ├── dev/jvm_args.txt   DEV heap size
+    ├── live/env.conf      LIVE server id and port
+    └── live/jvm_args.txt  LIVE heap size
 ```
 
 So changing a setting is an ordinary edit, commit and push. The deploy
@@ -132,6 +134,26 @@ create-1.21.1-1.0.0.jar  https://example.com/create-1.21.1-1.0.0.jar
 
 The deploy downloads any missing mod and removes any mod that is no longer
 listed, so dev and live stay on the same mod set.
+
+### Memory allocation
+
+Each environment has its own JVM heap size, in
+`minecraft/env/<env>/jvm_args.txt`:
+
+| | min | max | G1 region |
+|---|---|---|---|
+| dev | 2G | 4G | 2M |
+| live | 4G | 8G | 4M |
+
+The deploy applies these, so the allocation is reviewable and reproducible
+rather than being set once in the panel and forgotten. A change takes effect
+on the next restart.
+
+The host has 24 GB and 8 GB of swap (`/swapfile`, persistent via `fstab`,
+`vm.swappiness=10`). Both servers running together use around 7 GB of heap
+and leave plenty of headroom. If you raise the live heap, keep the two
+allocations in step — a spike on the live server must not be able to
+OOM-kill the dev one, or vice versa.
 
 ### Restarting a Minecraft server
 

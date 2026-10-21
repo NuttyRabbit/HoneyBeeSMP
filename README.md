@@ -390,11 +390,16 @@ Heap size per environment, in `minecraft/env/<env>/jvm_args.txt`:
 
 | | min | max |
 |---|---|---|
-| dev | 2G | 4G |
-| live | 4G | 8G |
+| dev | 1G | 2G |
+| live | 4G | 12G |
+
+The dev server only has two player slots, so it gets a fraction of the
+memory. The live server's ceiling is 12G because pre-generating the world
+with Tectonic is the memory-hungry part - the heap grows into it as
+needed rather than being committed up front.
 
 If you raise the live heap, keep the two in step - a spike on live must not
-be able to OOM-kill dev.
+be able to OOM-kill dev. The host has 24 GB and 8 GB of swap.
 
 ## Change the world type
 

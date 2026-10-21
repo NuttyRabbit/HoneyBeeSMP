@@ -1,6 +1,6 @@
 -XX:+UnlockExperimentalVMOptions
 -Xms4G
--Xmx8G
+-Xmx12G
 -XX:+UseG1GC
 -XX:MaxGCPauseMillis=60
 -XX:G1HeapRegionSize=4M

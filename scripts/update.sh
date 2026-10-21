@@ -57,21 +57,29 @@ fi
 
 echo "==> branch: $BRANCH  (environment: $ENV)"
 
-# The working copy is switched to the branch this environment deploys from.
-current=$(git rev-parse --abbrev-ref HEAD)
-if [ "$current" != "$BRANCH" ]; then
-	echo "    switching from $current to $BRANCH"
-	git checkout "$BRANCH"
-fi
-
-# A dirty working tree would stop the pull ("local changes would be
-# overwritten"). That happens if someone edits files on the server
-# directly. Stash them before pulling, so the deploy is never blocked.
+# A dirty working tree would stop both the checkout and the pull ("local
+# changes would be overwritten"). That happens if someone edits files on
+# the server directly. Stash them FIRST, before switching branches -
+# otherwise git refuses to switch to a branch where the edited file
+# differs, and the deploy would silently run against the wrong branch.
 STASHED=0
 if [ -n "$(git status --porcelain)" ]; then
 	echo "    working tree has local changes - stashing them"
 	if git stash push --include-untracked -m "autodeploy $(date -u +%Y%m%d-%H%M%S)" >/dev/null 2>&1; then
 		STASHED=1
+	else
+		echo "    could not stash local changes - aborting rather than deploy the wrong branch" >&2
+		exit 1
+	fi
+fi
+
+# The working copy is switched to the branch this environment deploys from.
+current=$(git rev-parse --abbrev-ref HEAD)
+if [ "$current" != "$BRANCH" ]; then
+	echo "    switching from $current to $BRANCH"
+	if ! git checkout "$BRANCH"; then
+		echo "could not switch to $BRANCH - aborting" >&2
+		exit 1
 	fi
 fi
 

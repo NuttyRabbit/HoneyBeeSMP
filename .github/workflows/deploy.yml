@@ -114,19 +114,35 @@ jobs:
           echo "-------------------"
 
           echo "==> deploying $TARGET_ENV to $DEPLOY_USER@$DEPLOY_HOST"
-          if ! ssh \
+          set +e
+          ssh \
             -i ~/.ssh/deploy_key \
             -o BatchMode=yes \
             -o StrictHostKeyChecking=yes \
             "$DEPLOY_USER@$DEPLOY_HOST" \
-            "set -euo pipefail; cd '$DEPLOY_REPO_PATH'; sh scripts/update.sh '$TARGET_ENV' all"; then
-            echo "::error::The SSH connection to the server failed."
-            echo "::error::Common causes:"
-            echo "::error::  - the server is not reachable on port 22 from here"
-            echo "::error::  - the deploy key is not in the server's authorized_keys"
-            echo "::error::  - the known_hosts entry does not match the server's host key"
+            "set -euo pipefail; cd '$DEPLOY_REPO_PATH'; sh scripts/update.sh '$TARGET_ENV' all"
+          rc=$?
+          set -e
+
+          if [ "$rc" -ne 0 ]; then
+            # ssh returns 255 for a connection-level failure, and the
+            # remote command's own exit code otherwise. Telling them
+            # apart saves a lot of guessing.
+            if [ "$rc" -eq 255 ]; then
+              echo "::error::Could not connect to $DEPLOY_USER@$DEPLOY_HOST over SSH (exit 255)."
+              echo "::error::Check that:"
+              echo "::error::  - the server is reachable on port 22 from the runner"
+              echo "::error::  - the deploy key is in the server's ~/.ssh/authorized_keys"
+              echo "::error::  - the known_hosts entry below matches the server's host key"
+            else
+              echo "::error::Connected, but the deploy on the server failed (exit $rc)."
+              echo "::error::The output above is from the server. Common causes:"
+              echo "::error::  - the working copy on the server had local changes that"
+              echo "::error::    could not be stashed, so the branch was not switched"
+              echo "::error::  - the pull failed (another deploy was running?)"
+            fi
             echo "::error::The known_hosts entry in use is printed above."
-            exit 1
+            exit "$rc"
           fi
 
           echo "==> deploy finished"

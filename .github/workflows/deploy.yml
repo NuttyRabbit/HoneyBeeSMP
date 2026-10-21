@@ -4,12 +4,16 @@ name: deploy
 # DEV server. The workflow connects to the server over SSH and runs
 # scripts/update.sh there, which pulls, checks and deploys.
 #
-# First-time setup (once per repo):
-#   1. Add an SSH private key as a repository secret named DEPLOY_SSH_KEY.
-#   2. Add the server's address as DEPLOY_HOST, the user as DEPLOY_USER.
-#   3. Add the repo path on the server as DEPLOY_REPO_PATH.
-#   Run scripts/install-ci-key.sh on the server to generate the key pair
-#   and print the values to paste in.
+# Only two things need to be set up on GitHub, both as repository
+# secrets (Settings -> Secrets and variables -> Actions):
+#
+#   DEPLOY_SSH_KEY         the private key that authorises the deploy
+#   DEPLOY_SSH_KNOWN_HOSTS the server's host key, so SSH can verify it
+#
+# The server address, user and repo path are written into this workflow
+# directly. They are not secret - the address is in public DNS - and
+# keeping them out of the secret store means they cannot be pasted with
+# stray whitespace, which is a maddening thing to debug.
 
 on:
   push:
@@ -41,38 +45,25 @@ jobs:
     steps:
       - name: Deploy to the server
         env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_REPO_PATH: ${{ secrets.DEPLOY_REPO_PATH }}
+          # Not secrets. The address is in public DNS, the user and path
+          # are in the README.
+          DEPLOY_HOST: 132.145.16.69
+          DEPLOY_USER: ubuntu
+          DEPLOY_REPO_PATH: /home/ubuntu/honeybeesmp
+          # These really are secret.
           DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
           SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          # On a push, develop goes to dev and main goes to live. A manual
+          # On a push, develop goes to dev and main to live. A manual
           # run uses the chosen environment instead.
           TARGET_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.ref_name == 'main' && 'live' || 'dev') }}
         run: |
           set -euo pipefail
 
-          # Trim whitespace from the secrets. GitHub's secret boxes keep
-          # the trailing newline when you paste from a terminal, and a
-          # host with a trailing space makes SSH fail with "hostname
-          # contains invalid characters" (exit 255) before it even tries
-          # to connect - so the server logs nothing and the cause is
-          # invisible.
-          trim() {
-            local v="$1"
-            v="${v#"${v%%[![:space:]]*}"}"
-            v="${v%"${v##*[![:space:]]}"}"
-            printf '%s' "$v"
-          }
-          DEPLOY_HOST=$(trim "$DEPLOY_HOST")
-          DEPLOY_USER=$(trim "$DEPLOY_USER")
-          DEPLOY_REPO_PATH=$(trim "$DEPLOY_REPO_PATH")
-          DEPLOY_SSH_KNOWN_HOSTS=$(trim "${DEPLOY_SSH_KNOWN_HOSTS:-}")
-          export DEPLOY_HOST DEPLOY_USER DEPLOY_REPO_PATH DEPLOY_SSH_KNOWN_HOSTS
+          echo "==> target: $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_REPO_PATH ($TARGET_ENV)"
 
           # Fail with a clear message rather than a confusing SSH error.
           missing=""
-          for var in DEPLOY_HOST DEPLOY_USER DEPLOY_REPO_PATH SSH_PRIVATE_KEY; do
+          for var in SSH_PRIVATE_KEY; do
             if [ -z "${!var:-}" ]; then
               missing="$missing $var"
             fi
@@ -83,14 +74,20 @@ jobs:
             exit 1
           fi
 
-          # Show the shape of the values without leaking them, so a stray
-          # character or a wrong value is obvious.
-          echo "DEPLOY_HOST has ${#DEPLOY_HOST} characters, DEPLOY_USER has ${#DEPLOY_USER}"
-          if ! printf '%s' "$DEPLOY_HOST" | grep -qE '^[A-Za-z0-9._-]+$'; then
-            echo "::error::DEPLOY_HOST contains characters that are not valid in a hostname."
-            echo "::error::It should be just the address, for example 132.145.16.69"
-            exit 1
-          fi
+          # Trim whitespace from the values that came from secrets.
+          # GitHub's secret boxes keep the trailing newline when you
+          # paste from a terminal, and a host with a trailing space makes
+          # SSH fail with "hostname contains invalid characters" (exit
+          # 255) before it even tries to connect - so the server logs
+          # nothing and the cause is invisible.
+          trim() {
+            local v="$1"
+            v="${v#"${v%%[![:space:]]*}"}"
+            v="${v%"${v##*[![:space:]]}"}"
+            printf '%s' "$v"
+          }
+          DEPLOY_SSH_KNOWN_HOSTS=$(trim "${DEPLOY_SSH_KNOWN_HOSTS:-}")
+          export DEPLOY_SSH_KNOWN_HOSTS
 
           # Can we even reach port 22 from here? Test it directly, so a
           # network problem is reported as a network problem rather than
@@ -154,7 +151,7 @@ jobs:
           cat ~/.ssh/known_hosts
           echo "-------------------"
 
-          echo "==> deploying $TARGET_ENV to $DEPLOY_USER@$DEPLOY_HOST"
+          echo "==> deploying $TARGET_ENV"
           set +e
           ssh \
             -i ~/.ssh/deploy_key \

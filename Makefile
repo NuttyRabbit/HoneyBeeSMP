@@ -27,7 +27,8 @@ LIVE_SERVER := 119045e1-1fac-41a0-83c0-5e2d85ce4c78
         deploy-mc deploy-mc-dev status check pull log \
         crafty-up crafty-down crafty-logs \
         mc-status mc-status-dev mc-restart mc-restart-dev \
-        backup backup-log update update-dev
+        backup backup-log update update-dev \
+        modpack modpack-add modpack-publish modpack-status modpack-verify
 
 help: ## Show this help
 	@echo "HoneyBeeSMP — available targets:"
@@ -122,3 +123,22 @@ backup: ## Run a backup to Google Drive now
 
 backup-log: ## Show the backup log
 	@tail -30 "$(REPO_DIR)/logs/backup.log" 2>/dev/null || echo "no backup log yet"
+
+# --- Modpack ----------------------------------------------------------------
+
+modpack: modpack-status ## Show what is in the modpack
+	@python3 "$(REPO_DIR)/scripts/modpack.py" list
+
+modpack-add: ## Add a mod to the modpack: make modpack-add SLUG=create
+	@test -n "$(SLUG)" || { echo "usage: make modpack-add SLUG=<modrinth-slug>"; exit 2; }
+	@python3 "$(REPO_DIR)/scripts/modpack.py" add "$(SLUG)" --env dev
+
+modpack-publish: ## Bump the pack version and publish it to Modrinth
+	@python3 "$(REPO_DIR)/scripts/modpack.py" bump
+	@python3 "$(REPO_DIR)/scripts/publish-modpack.py" publish
+
+modpack-status: ## Show the Modrinth project and its latest version
+	@python3 "$(REPO_DIR)/scripts/publish-modpack.py" status
+
+modpack-verify: ## Check the live server's mods against the pack
+	@python3 "$(REPO_DIR)/scripts/modpack.py" verify /opt/crafty/servers/119045e1-1fac-41a0-83c0-5e2d85ce4c78/mods

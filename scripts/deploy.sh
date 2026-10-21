@@ -69,7 +69,34 @@ deploy_web() {
 	sudo mkdir -p "$WEB_ROOT"
 	rsync -a --delete --no-group --no-perms --omit-dir-times \
 		--chmod=Fg+rw "$WEB_SRC/" "$WEB_ROOT/"
+
 	echo "    $(find "$WEB_ROOT" -type f | wc -l) file(s) published"
+}
+
+# Publish the modpack to Modrinth, where players install it from and the
+# launcher keeps it up to date. The project is the distribution channel, so
+# a pack change is not finished until it is published.
+#
+# If Modrinth is not set up yet there is nothing to publish to, so the step
+# is skipped rather than failing the whole deploy.
+publish_modpack() {
+	echo "==> modpack -> Modrinth"
+
+	if [ -z "${MODRINTH_TOKEN:-}" ] && [ ! -f "$HOME/.config/modrinth/token" ]; then
+		echo "    skipped: no Modrinth API token configured"
+		echo "    see scripts/publish-modpack.py for how to set one up"
+		return 0
+	fi
+	if [ ! -f "$HOME/.config/modrinth/project-id" ]; then
+		echo "    skipped: no Modrinth project yet"
+		echo "    run: python3 scripts/publish-modpack.py create"
+		return 0
+	fi
+
+	if ! python3 "$REPO_ROOT/scripts/publish-modpack.py" publish; then
+		echo "    FAILED to publish the modpack to Modrinth" >&2
+		return 1
+	fi
 }
 
 deploy_bot() {
@@ -108,6 +135,11 @@ all)
 	deploy_web
 	deploy_bot
 	deploy_minecraft
+	# The modpack is published from the live environment only - publishing
+	# a draft pack would push unreleased mods at players.
+	if [ "$ENV" = "live" ]; then
+		publish_modpack
+	fi
 	;;
 *)
 	echo "usage: $0 <dev|live> [web|bot|minecraft|all] [--restart]" >&2

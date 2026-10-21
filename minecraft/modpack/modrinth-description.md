@@ -16,6 +16,9 @@ the pack from the **Files** tab - it is a Modrinth pack, so Modrinth App
 and Prism Launcher both handle it, and they will offer you updates when
 the server changes.
 
+This is a **PvE** server - you fight the game, not other players. Claim
+your land with Open Parties and Claims so your builds are safe.
+
 ## What the server is
 
 A community server where the point is building things. Create is the
@@ -26,6 +29,10 @@ game:
 - **Create: Crafts & Additions** - extra Create machines and fluids
 - **Create: Big Cannons** - cannons and projectiles
 - **Create: Compression** - compressors and the machines around them
+- **Create: Ore Excavation** - the drill rebalance, which is what makes
+  Create's mining loop worth playing
+- **Create: Numismatics** - currency, so the factory has something to be
+  worth
 - **Sophisticated Storage** - storage blocks, and the drawers Create fills
 - **Productive Bees** - bees, and the automation built around them
 - **FastSuite** and **FastWorkbench** - crafting speed, so a large factory
@@ -37,20 +44,33 @@ Plus a quality-of-life set so the game stays pleasant:
 - **Jade** - block information in the world
 - **AppleSkin** - shows real food values
 - **Waystones** - teleport stones for getting around
+- **WTHIT** - shows what a waystone links to
 - **Shulker Box Tooltip** - see what is in a shulker without opening it
 - **Mouse Tweaks** - inventory right-click behaviour
 - **BetterF3** - the F3 debug screen
 - **No Chat Reports** - chat without the reporting system
+- **Legendary Tooltips** - nicer tooltips
+- **Clumps** - merges XP orbs
 
 And a few for performance and the world itself:
 
 - **FerriteCore** - a large chunk of the frame-time saving
+- **Sodium** - rendering performance
+- **More Culling** - culls entities you cannot see
+- **Continuity** - connected textures, so Create looks far better
+- **Lithium** and **ModernFix** - tick and memory performance
 - **Spark** - the profiler, so you can see where the time goes
 - **AntiXray** - stops ore and cave reveals through the server
 - **Terralith** - better terrain, caves and biomes
-- **Xaero's Minimap** - minimap and waypoints
+- **Tectonic** - terrain shaping, at a scale Terralith does not do
+- **Xaero's Minimap** and **Xaero's World Map** - minimap, waypoints and
+  the world map
 
-27 mods in all, chosen to work well together rather than to be the biggest
+The server also runs LuckPerms for permissions, Open Parties and Claims so
+you can protect your builds, and KubeJS. Those are server-side only - you
+do not need them.
+
+50 mods in all, chosen to work well together rather than to be the biggest
 set possible.
 
 ## Reporting problems

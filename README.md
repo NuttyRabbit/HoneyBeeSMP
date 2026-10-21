@@ -59,6 +59,9 @@ works for everyone else too.
 | Server address | `play.honeybeesmp.co.uk` |
 | Server port | 25566 |
 
+This is a **PvE** server - you fight the game, not other players. Claim
+your land with Open Parties and Claims so your builds are safe.
+
 ### Install the modpack
 
 The server is listed on [Modrinth](https://modrinth.com/server/honeybeesmp),
@@ -90,7 +93,7 @@ and try again.
 
 ## What is in the pack
 
-27 mods, chosen to work well together rather than to be the biggest set
+50 mods, chosen to work well together rather than to be the biggest set
 possible.
 
 ### Create and factory building
@@ -99,6 +102,10 @@ possible.
 - **Create: Crafts & Additions** - extra Create machines and fluids
 - **Create: Big Cannons** - cannons and projectiles
 - **Create: Compression** - compressors and the machines around them
+- **Create: Ore Excavation** - the drill rebalance, which is what makes
+  Create's mining loop worth playing
+- **Create: Numismatics** - currency, so the factory has something to be
+  worth
 - **Sophisticated Storage** - storage blocks, and the drawers Create fills
 - **Productive Bees** - bees, and the automation built around them
 - **FastSuite** and **FastWorkbench** - crafting speed, so a large factory is
@@ -110,25 +117,42 @@ possible.
 - **Jade** - block information in the world
 - **AppleSkin** - shows real food values
 - **Waystones** - teleport stones for getting around
+- **WTHIT** - shows what a waystone links to
 - **Shulker Box Tooltip** - see what is in a shulker without opening it
 - **Mouse Tweaks** - inventory right-click behaviour
 - **BetterF3** - the F3 debug screen
 - **No Chat Reports** - chat without the reporting system
+- **Legendary Tooltips** - nicer tooltips
+- **Clumps** - merges XP orbs
 
 ### Performance
 
 - **FerriteCore** - a large chunk of the frame-time saving
+- **Sodium** - rendering performance
+- **More Culling** - culls entities you cannot see
+- **Continuity** - connected textures, so Create looks far better
+- **Lithium** and **ModernFix** - tick and memory performance
+- **Noisium** - fewer random ticks, which matters on a server full of
+  machinery
 - **Spark** - the profiler, so you can see where the time goes
 - **AntiXray** - stops ore and cave reveals through the server
 
 ### Exploration and world generation
 
 - **Terralith** - better terrain, caves and biomes
+- **Tectonic** - terrain shaping, at a scale Terralith does not do
 - **Xaero's Minimap** - minimap and waypoints
+- **Xaero's World Map** - the world map, to go with it
 
-A few mods in this pack are server-only. You do not need to install anything
+### Server side
+
+These are not on players' clients. You do not need to install anything
 extra - the launcher works out which files belong on your machine from the
 pack itself.
+
+- **LuckPerms** - permissions
+- **Open Parties and Claims** - claims, parties and grief protection
+- **KubeJS** - server-side scripting
 
 The pack carries our server configs, so everyone plays with the same
 settings. `config/` and `defaultconfigs/` are marked as editable, so you can
@@ -315,6 +339,7 @@ minecraft/
 ├── config/                NeoForge settings        -> server's config/
 ├── defaultconfigs/        server-only defaults     -> server's defaultconfigs/
 ├── modpack/               the modpack definition and overrides
+├── server-config/         settings for server-only mods
 └── env/
     ├── dev/env.conf       DEV server port, address, world settings, MC version
     ├── dev/jvm_args.txt   DEV heap size
@@ -331,6 +356,11 @@ Two things to know:
   startup. See [Restart a Minecraft server](#restart-a-minecraft-server).
 - **Never edit the config on the server directly.** The next deploy
   overwrites it. If you must, change it in the repo instead.
+
+`server-config/` is for the mods that write their own config on the
+server, such as LuckPerms and Open Parties and Claims. It holds only the
+settings you want changed; the deploy merges them into the config the mod
+generated, so the mod's own defaults are not tracked here.
 
 ### The whitelist
 

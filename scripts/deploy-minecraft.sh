@@ -257,7 +257,7 @@ fi
 # group root, matching the rest of the server directory) or the server
 # cannot write its own config.
 PACK_SRC="$MC_SRC/modpack"
-for pair in "overrides:config defaultconfigs" "server-overrides:server-overrides"; do
+for pair in "overrides:config defaultconfigs" ; do
 	src_name=${pair%%:*}
 	dst_names=${pair#*:}
 	[ -d "$PACK_SRC/$src_name" ] || continue
@@ -272,6 +272,49 @@ for pair in "overrides:config defaultconfigs" "server-overrides:server-overrides
 	done
 done
 
+# The pack's "server-overrides" is the server-only half: it is copied to
+# the server root keeping its structure, so server-overrides/config/x.toml
+# lands in the server's config/x.toml. That is where the settings for
+# mods that only exist on the server - LuckPerms, Open Parties and Claims
+# - live.
+#
+# These files are complete, not patches. The server's own config is
+# overwritten by them, so a partial file would throw away everything
+# else the mod wrote for itself.
+if [ -d "$PACK_SRC/server-overrides" ]; then
+	echo "    syncing server-overrides -> (server root)"
+	sudo rsync -a \
+		--no-group --no-perms --omit-dir-times \
+		--chown=opc:root \
+		"$PACK_SRC/server-overrides/" "$TARGET/"
+fi
+
+# The settings we want for mods that write their own config on the server
+# - LuckPerms, Open Parties and Claims. These are merged into the config
+# the mod generated rather than replacing it, so the repo does not have
+# to carry a copy of the mod's defaults.
+SERVER_CONFIG_SRC="$MC_SRC/server-config"
+if [ -d "$SERVER_CONFIG_SRC" ]; then
+	for overrides in "$SERVER_CONFIG_SRC"/*.toml; do
+		[ -f "$overrides" ] || continue
+		name=$(basename "$overrides")
+		CURRENT_CFG=$(mktemp)
+		merged=$(mktemp)
+		sudo cat "$TARGET/config/$name" > "$CURRENT_CFG" 2>/dev/null || true
+		if python3 "$REPO_ROOT/scripts/server-config.py" merge \
+			"$overrides" "$CURRENT_CFG" "$merged"; then
+			if cmp -s "$merged" "$CURRENT_CFG"; then
+				echo "    $name unchanged"
+			else
+				echo "    $name changed - updating"
+				sudo cp "$merged" "$TARGET/config/$name"
+				sudo chown opc:root "$TARGET/config/$name" 2>/dev/null || true
+			fi
+		fi
+		rm -f "$CURRENT_CFG" "$merged"
+	done
+fi
+
 # ---------------------------------------------------------------------------
 # 3. Install the server-side mods
 # ---------------------------------------------------------------------------
@@ -284,19 +327,33 @@ done
 # players download, so the two can never disagree.
 echo "    installing mods from the pack"
 sudo mkdir -p "$TARGET/mods"
+# Remember what is there now, so the log says what was taken away. A mod
+# that leaves the pack has to actually leave the server - otherwise the
+# server keeps loading it, and the crash it causes shows up long after
+# the change that caused it.
+BEFORE=$(mktemp)
+sudo ls -1 "$TARGET/mods" 2>/dev/null | sort > "$BEFORE"
 MODS_STAGE=$(mktemp -d)
 if python3 "$REPO_ROOT/scripts/modpack.py" install "$MODS_STAGE"; then
-	sudo rsync -a \
+	# --delete makes the server's mods directory exactly the pack. Without
+	# it the directory only ever grows.
+	sudo rsync -a --delete \
 		--no-group --no-perms --omit-dir-times \
 		--chown=opc:root \
 		--chmod=F644 \
 		"$MODS_STAGE/" "$TARGET/mods/"
+	AFTER=$(mktemp)
+	sudo ls -1 "$TARGET/mods" | sort > "$AFTER"
+	comm -23 "$BEFORE" "$AFTER" | while read -r gone; do
+		[ -n "$gone" ] && echo "    removed $gone"
+	done
+	rm -f "$AFTER"
 else
 	echo "    FAILED to install mods from the pack" >&2
-	rm -rf "$MODS_STAGE"
+	rm -rf "$MODS_STAGE" "$BEFORE"
 	exit 1
 fi
-rm -rf "$MODS_STAGE"
+rm -rf "$MODS_STAGE" "$BEFORE"
 
 # ---------------------------------------------------------------------------
 # 4. Restart (optional)

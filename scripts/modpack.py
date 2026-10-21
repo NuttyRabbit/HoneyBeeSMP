@@ -321,7 +321,6 @@ def cmd_list(args) -> int:
         )
     return 0
 
-
 def download(url: str, dest: str) -> str:
     """Download a file, returning its sha512."""
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
@@ -452,6 +451,49 @@ def cmd_export(args) -> int:
     return 0
 
 
+def cmd_remove(args) -> int:
+    """Take a mod out of the pack.
+
+    The mod is matched by its Modrinth project, so every version of it
+    that is in the pack comes out. Anything that was only in the pack
+    because this mod needed it is left alone - an extra mod is harmless,
+    and guessing which dependencies are now redundant is not.
+    """
+    index = load_index()
+    project = api_get(f"/project/{args.slug}")
+    versions = api_get(f"/project/{args.slug}/version")
+
+    filenames = set()
+    for version in versions:
+        for f in version.get("files", []):
+            if f.get("filename"):
+                filenames.add(f["filename"])
+
+    if not filenames:
+        die(f"'{args.slug}' has no downloadable files")
+
+    kept = []
+    removed = []
+    for entry in index.get("files", []):
+        if os.path.basename(entry.get("path", "")) in filenames:
+            removed.append(entry)
+        else:
+            kept.append(entry)
+
+    if not removed:
+        info(f"'{project.get('title', args.slug)}' is not in the pack")
+        return 0
+
+    for entry in removed:
+        info(f"  removed {entry['path']}")
+
+    index["files"] = kept
+    index["versionId"] = next_version(index)
+    info(f"  pack version -> {index['versionId']}")
+    save_index(index)
+    return 0
+
+
 def cmd_bump(args) -> int:
     """Bump the pack version.
 
@@ -477,8 +519,18 @@ def main() -> int:
     p.set_defaults(func=cmd_add)
 
     p = sub.add_parser("list", help="show what is in the pack")
-    p.add_argument("side", nargs="?", default="both", choices=["client", "server", "both"])
+    p.add_argument(
+        "side",
+        nargs="?",
+        default="all",
+        choices=["all", "client", "server", "both"],
+        help="which side to show (default: all)",
+    )
     p.set_defaults(func=cmd_list)
+
+    p = sub.add_parser("remove", help="take a mod out of the pack")
+    p.add_argument("slug", help="Modrinth project slug")
+    p.set_defaults(func=cmd_remove)
 
     p = sub.add_parser("install", help="download the server-side mods into a directory")
     p.add_argument("directory")

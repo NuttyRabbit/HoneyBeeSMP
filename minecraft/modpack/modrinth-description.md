@@ -53,16 +53,6 @@ And a few for performance and the world itself:
 27 mods in all, chosen to work well together rather than to be the biggest
 set possible.
 
-## One pack for everyone
-
-The server and your client run the same mods from the same list, so
-everything you build works for everyone else too. When we change
-something, your launcher offers you the new version before you play.
-
-The pack carries our server configs as well, so everyone plays with the
-same settings. `config/` and `defaultconfigs/` are marked as editable, so
-you can change your own copy without it affecting anyone else.
-
 ## Reporting problems
 
 If something is broken, or you cannot connect, let us know and include

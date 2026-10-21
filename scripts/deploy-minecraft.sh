@@ -97,6 +97,34 @@ fi
 rm -f "$RENDERED" "$CURRENT"
 
 # ---------------------------------------------------------------------------
+# 1b. JVM memory settings
+# ---------------------------------------------------------------------------
+# Each environment has its own heap size, because the live server has real
+# players and the dev server does not. Keeping these in the repo means the
+# allocation is reviewable and reproducible, rather than being set once in
+# the panel and forgotten.
+#
+# The change only takes effect when the server next starts, so this is
+# safe to write while the server is running.
+JVM_ARGS_SRC="$MC_SRC/env/$ENV/jvm_args.txt"
+if [ -f "$JVM_ARGS_SRC" ]; then
+	JVM_ARGS_RENDERED=$(mktemp)
+	sed "s/@SERVER_ID@/$SERVER_ID/g" "$JVM_ARGS_SRC" > "$JVM_ARGS_RENDERED"
+	JVM_ARGS_CURRENT=$(mktemp)
+	if sudo test -f "$TARGET/user_jvm_args.txt"; then
+		sudo cat "$TARGET/user_jvm_args.txt" > "$JVM_ARGS_CURRENT" 2>/dev/null || true
+	fi
+	if cmp -s "$JVM_ARGS_RENDERED" "$JVM_ARGS_CURRENT"; then
+		echo "    jvm args unchanged"
+	else
+		echo "    jvm args changed - updating (takes effect on next restart)"
+		sudo cp "$JVM_ARGS_RENDERED" "$TARGET/user_jvm_args.txt"
+		sudo chown opc:root "$TARGET/user_jvm_args.txt" 2>/dev/null || true
+	fi
+	rm -f "$JVM_ARGS_RENDERED" "$JVM_ARGS_CURRENT"
+fi
+
+# ---------------------------------------------------------------------------
 # 2. Sync NeoForge config
 # ---------------------------------------------------------------------------
 # These are the server's behaviour settings (world generation, tick rates,

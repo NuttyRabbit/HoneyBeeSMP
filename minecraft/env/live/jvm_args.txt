@@ -1,0 +1,16 @@
+-XX:+UnlockExperimentalVMOptions
+-Xms14G
+-Xmx14G
+-XX:+UseG1GC
+-XX:MaxGCPauseMillis=60
+-XX:G1HeapRegionSize=16M
+-XX:G1ReservePercent=15
+-XX:InitiatingHeapOccupancyPercent=20
+-XX:G1NewSizePercent=40
+-XX:G1MaxNewSizePercent=50
+-XX:+ParallelRefProcEnabled
+-XX:+UseStringDeduplication
+-XX:+AlwaysPreTouch
+-XX:+DisableExplicitGC
+-XX:+PerfDisableSharedMem
+-Dneoforge.readTimeout=120

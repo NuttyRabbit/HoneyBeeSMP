@@ -24,14 +24,17 @@ on:
         options: [live, dev]
 
 # Two deployments running at once would fight over the server's git
-# checkout, so only one runs at a time.
+# checkout, so only one runs at a time. The group deliberately does NOT
+# include the branch: a push to main and a push to develop must not
+# overlap, because both switch the same working copy to a different
+# branch.
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: honeybeesmp-deploy
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy ${{ github.ref_name }}
+    name: Deploy
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -41,11 +44,26 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_REPO_PATH: ${{ secrets.DEPLOY_REPO_PATH }}
+          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
           SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          # develop deploys to the dev environment, main to live.
-          TARGET_ENV: ${{ github.ref_name == 'main' && 'live' || 'dev' }}
+          # On a push, develop goes to dev and main goes to live. A manual
+          # run uses the chosen environment instead.
+          TARGET_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.ref_name == 'main' && 'live' || 'dev') }}
         run: |
           set -euo pipefail
+
+          # Fail with a clear message rather than a confusing SSH error.
+          missing=""
+          for var in DEPLOY_HOST DEPLOY_USER DEPLOY_REPO_PATH SSH_PRIVATE_KEY; do
+            if [ -z "${!var:-}" ]; then
+              missing="$missing $var"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secret(s):$missing"
+            echo "Add them under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
 
           # The private key is provided as a secret; write it out with the
           # permissions SSH insists on.
@@ -54,15 +72,17 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
 
           # Pin the server's host key so we cannot be tricked by a
-          # man-in-the-middle. Set DEPLOY_SSH_KNOWN_HOSTS to the contents
-          # of the server's /etc/ssh/ssh_host_ed25519_key.pub.
+          # man-in-the-middle. If DEPLOY_SSH_KNOWN_HOSTS was not set, fall
+          # back to discovering it (less strict, but better than failing).
           if [ -n "${DEPLOY_SSH_KNOWN_HOSTS:-}" ]; then
             printf '%s\n' "$DEPLOY_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+            echo "using the pinned host key from DEPLOY_SSH_KNOWN_HOSTS"
           else
+            echo "::warning::DEPLOY_SSH_KNOWN_HOSTS is not set; discovering the host key instead"
             ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
           fi
 
-          echo "==> deploying $TARGET_ENV from ${{ github.ref_name }} to $DEPLOY_HOST"
+          echo "==> deploying $TARGET_ENV to $DEPLOY_USER@$DEPLOY_HOST"
           ssh \
             -i ~/.ssh/deploy_key \
             -o BatchMode=yes \

@@ -5,7 +5,48 @@ deployment tooling.
 
 **Repo:** https://github.com/NuttyRabbit/HoneyBeeSMP (private)
 **Live site:** https://honeybeesmp.co.uk
+**Dev site:** https://dev.honeybeesmp.co.uk
 **Server panel:** https://panel.honeybeesmp.co.uk
+
+---
+
+## Quick start
+
+The repo is cloned at `~/honeybeesmp` on both your laptop and the server.
+
+```sh
+cd ~/honeybeesmp
+git checkout develop     # work on develop, not main
+```
+
+Make a change, then:
+
+```sh
+git add -A
+git commit -m "describe the change"
+git push origin develop
+```
+
+**That is the whole loop.** Pushing to `develop` automatically deploys to the
+dev environment. You can then look at https://dev.honeybeesmp.co.uk and the
+DEV Minecraft server to test it. When it works, merge to `main`:
+
+```sh
+git checkout main
+git merge develop
+git push origin main      # deploys to live
+```
+
+You can also work directly on the server over SSH (`ssh ubuntu@132.145.16.69`,
+repo at `~/honeybeesmp`) — but committing and pushing from your laptop is
+usually easier, and the CI deploy works the same either way.
+
+### What runs where
+
+| | branch | website | Minecraft server |
+|---|---|---|---|
+| dev | `develop` | dev.honeybeesmp.co.uk | DEV, port 25565 |
+| live | `main` | honeybeesmp.co.uk | LIVE, port 25566 |
 
 ---
 
@@ -18,6 +59,7 @@ is never a question of which copy is authoritative.
 ```
 website/      -> deployed to /var/www/honeybeesmp.co.uk   (nginx)
 bot/          -> deployed to /opt/honeybee-discord-bot    (runtime dir)
+minecraft/    -> the server's configuration (not the world data)
 scripts/      -> check / deploy / update helpers
 ```
 
@@ -34,7 +76,7 @@ Things that are **not** in the repo, on purpose:
 
 ## Everyday workflow
 
-Edit files in this repo (e.g. from Zed over SSH), then:
+Edit files in this repo, then:
 
 ```sh
 git add -A
@@ -43,7 +85,7 @@ git push
 ```
 
 The CI workflow runs `scripts/check.sh` on every push to confirm no secrets or
-oversized files slipped in.
+oversized files slipped in, and then deploys.
 
 ### Publishing a change to the live site
 

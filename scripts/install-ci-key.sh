@@ -23,20 +23,24 @@ set -eu
 
 REPO_ROOT=$(git -C "$(dirname "$0")" rev-parse --show-toplevel)
 KEY_NAME=github-actions-deploy
-KEY_PATH="$HOME/.ssh/$KEY_NAME"
+# The key belongs to the deploy user, not to root (sudo changes $HOME, so
+# "$HOME" cannot be trusted here).
+DEPLOY_USER=${DEPLOY_USER:-ubuntu}
+DEPLOY_HOME=$(getent passwd "$DEPLOY_USER" | cut -d: -f6)
+KEY_PATH="$DEPLOY_HOME/.ssh/$KEY_NAME"
 
 SHOW_PRIVATE=0
 [ "${1:-}" = "--show-private" ] && SHOW_PRIVATE=1
 
 [ "$(id -u)" = "0" ] || { echo "run with sudo" >&2; exit 1; }
 
-mkdir -p /home/ubuntu/.ssh
-chmod 700 /home/ubuntu/.ssh
+mkdir -p "$DEPLOY_HOME/.ssh"
+chmod 700 "$DEPLOY_HOME/.ssh"
 
 if [ ! -f "$KEY_PATH" ]; then
 	echo "==> creating key pair $KEY_NAME"
 	ssh-keygen -t ed25519 -N '' -C 'github-actions-deploy' -f "$KEY_PATH"
-	chown ubuntu:ubuntu "$KEY_PATH" "$KEY_PATH.pub"
+	chown "$DEPLOY_USER":"$DEPLOY_USER" "$KEY_PATH" "$KEY_PATH.pub"
 	chmod 600 "$KEY_PATH"
 	chmod 644 "$KEY_PATH.pub"
 else
@@ -44,9 +48,9 @@ else
 fi
 
 # Authorise the public key for the deploy user.
-AUTH=/home/ubuntu/.ssh/authorized_keys
+AUTH="$DEPLOY_HOME/.ssh/authorized_keys"
 touch "$AUTH"
-chown ubuntu:ubuntu "$AUTH"
+chown "$DEPLOY_USER":"$DEPLOY_USER" "$AUTH"
 chmod 600 "$AUTH"
 if ! grep -qF "$(cat "$KEY_PATH.pub")" "$AUTH"; then
 	echo "==> adding public key to $AUTH"
@@ -58,8 +62,8 @@ fi
 # The deploy user must be able to run the deploy without a password.
 echo
 echo "==> ensuring passwordless sudo for the deploy user"
-if ! grep -q '^ubuntu ALL=(ALL) NOPASSWD:ALL$' /etc/sudoers; then
-	echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/99-ubuntu-deploy
+if ! grep -q "^$DEPLOY_USER ALL=(ALL) NOPASSWD:ALL$" /etc/sudoers; then
+	echo "$DEPLOY_USER ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/99-ubuntu-deploy
 	chmod 440 /etc/sudoers.d/99-ubuntu-deploy
 	echo "    added /etc/sudoers.d/99-ubuntu-deploy"
 else

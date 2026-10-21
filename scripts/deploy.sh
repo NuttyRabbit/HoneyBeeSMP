@@ -65,7 +65,8 @@ deploy_web() {
 	# member, so rsync cannot chgrp/chmod/chtime the dir itself. Skip all
 	# directory attribute syncing: files inherit the setgid group and
 	# remain group-writable, which is what nginx and future deploys need.
-	mkdir -p "$WEB_ROOT"
+	# The root may not exist yet and /var/www is not writable by us.
+	sudo mkdir -p "$WEB_ROOT"
 	rsync -a --delete --no-group --no-perms --omit-dir-times \
 		--chmod=Fg+rw "$WEB_SRC/" "$WEB_ROOT/"
 	echo "    $(find "$WEB_ROOT" -type f | wc -l) file(s) published"
@@ -75,7 +76,11 @@ deploy_bot() {
 	echo "==> bot: $BOT_SRC -> $BOT_DEST"
 	# .env must never be touched: it holds the live Discord token.
 	# data/ and logs/ hold runtime state.
-	mkdir -p "$BOT_DEST"
+	# The destination may not exist yet, and /opt is not writable by the
+	# deploy user, so creating it needs sudo. It is owned by the deploy
+	# user so that subsequent deploys can write to it without sudo.
+	sudo mkdir -p "$BOT_DEST"
+	sudo chown "$(id -u):$(id -g)" "$BOT_DEST" 2>/dev/null || true
 	rsync -a \
 		--no-group \
 		--no-perms \

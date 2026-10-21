@@ -21,6 +21,7 @@ import json
 import logging
 import os
 import sys
+import time
 
 import discord
 from discord.ext import commands
@@ -46,6 +47,11 @@ class Config:
         self.server_port = int(os.environ.get("SERVER_PORT", "25566"))
         # How often to check whether the player list has changed.
         self.poll_seconds = int(os.environ.get("POLL_SECONDS", "30"))
+        # Where to write the status file the website reads. Blank to turn
+        # it off.
+        self.status_file = os.environ.get(
+            "STATUS_FILE", "/var/www/honeybeesmp.co.uk/status.json"
+        ).strip()
         # Where to put the slash commands: "guild" for this server only,
         # or "global" for every server the bot is in. Guild commands appear
         # straight away; global ones can take an hour to reach Discord.
@@ -306,10 +312,8 @@ class HoneyBee(commands.Bot):
         self._status_message = await channel.send(embed=embed)
 
     async def watch(self) -> None:
-        """Keep the status channel up to date, and say who came and went."""
+        """Keep the status channel and the website's status file up to date."""
         channel = await self.status_channel()
-        if channel is None:
-            return
 
         last_count: int | None = None
         last_names: set[str] = set()
@@ -321,6 +325,7 @@ class HoneyBee(commands.Bot):
                 )
             except Exception as exc:
                 log.warning("could not reach the Minecraft server: %s", exc)
+                self._publish_offline()
                 await asyncio.sleep(self.config.poll_seconds)
                 continue
 
@@ -332,13 +337,64 @@ class HoneyBee(commands.Bot):
             # hint and the player count is the reliable part.
             names = set(players.get("sample") or [])
 
-            if last_count is not None and online != last_count:
-                await self._announce(channel, online - last_count, names, last_names)
-            last_count = online
-            last_names = names
+            self._publish_status(online, maximum, version)
 
-            await self._update_embed(channel, online, maximum, version)
+            if channel is not None:
+                if last_count is not None and online != last_count:
+                    await self._announce(channel, online - last_count, names, last_names)
+                last_count = online
+                last_names = names
+                await self._update_embed(channel, online, maximum, version)
+
             await asyncio.sleep(self.config.poll_seconds)
+
+    # -- the website's status file -------------------------------------------
+
+    def _publish_status(self, online: int, maximum: int, version: str) -> None:
+        """Write the status file the website reads."""
+        if not self.config.status_file:
+            return
+        self._write_status(
+            {
+                "online": online,
+                "max": maximum,
+                "version": version,
+                "address": self.config.address,
+                "online_server": True,
+                "updated": int(time.time()),
+            }
+        )
+
+    def _publish_offline(self) -> None:
+        """Tell the website the server is not answering."""
+        if not self.config.status_file:
+            return
+        self._write_status(
+            {
+                "online": 0,
+                "max": 0,
+                "version": "",
+                "address": self.config.address,
+                "online_server": False,
+                "updated": int(time.time()),
+            }
+        )
+
+    def _write_status(self, payload: dict) -> None:
+        path = self.config.status_file
+        # Write it to one side and move it into place, so a reader never
+        # sees half a file.
+        temporary = f"{path}.tmp"
+        try:
+            with open(temporary, "w") as handle:
+                json.dump(payload, handle)
+            os.replace(temporary, path)
+        except OSError as exc:
+            log.warning("could not write the status file %s: %s", path, exc)
+            try:
+                os.unlink(temporary)
+            except OSError:
+                pass
 
     async def _announce(
         self, channel: discord.TextChannel, change: int, names: set[str], last_names: set[str]
@@ -371,9 +427,9 @@ async def main() -> None:
     bot = HoneyBee(config)
 
     async with bot:
-        # The status channel only matters if it has been set.
-        if config.status_channel_id:
-            bot.loop.create_task(bot.watch())
+        # This keeps the website's status file up to date, and the status
+        # channel too if one has been set.
+        bot.loop.create_task(bot.watch())
         await bot.start(config.token)
 
 

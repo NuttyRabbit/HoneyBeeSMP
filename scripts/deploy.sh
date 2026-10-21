@@ -67,7 +67,10 @@ deploy_web() {
 	# remain group-writable, which is what nginx and future deploys need.
 	# The root may not exist yet and /var/www is not writable by us.
 	sudo mkdir -p "$WEB_ROOT"
+	# status.json is written by the Discord bot, not by the repo, so it
+	# must survive a deploy that deletes everything else.
 	rsync -a --delete --no-group --no-perms --omit-dir-times \
+		--exclude='/status.json' \
 		--chmod=Fg+rw "$WEB_SRC/" "$WEB_ROOT/"
 
 	echo "    $(find "$WEB_ROOT" -type f | wc -l) file(s) published"

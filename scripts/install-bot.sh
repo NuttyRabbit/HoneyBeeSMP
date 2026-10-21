@@ -32,6 +32,11 @@ esac
 VENV="$BOT_DIR/.venv"
 UNIT=/etc/systemd/system/honeybeesmp-discord-bot.service
 
+# The bot does not need root. Run it as the person who owns the bot
+# directory, which is whoever deployed it.
+RUN_USER=${SUDO_USER:-$(id -un)}
+RUN_GROUP=$(id -gn "$RUN_USER" 2>/dev/null || echo "$RUN_USER")
+
 [ -f "$BOT_DIR/.env" ] || {
 	echo "error: $BOT_DIR/.env does not exist." >&2
 	echo "  It holds the bot token, and it is not in git. Create it with:" >&2
@@ -65,7 +70,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=$(id -un)
+User=$RUN_USER
+Group=$RUN_GROUP
 WorkingDirectory=$BOT_DIR
 EnvironmentFile=$BOT_DIR/.env
 Environment=PYTHONPATH=$BOT_DIR/src

@@ -1,0 +1,74 @@
+# Open Parties and Claims — server settings.
+#
+# The mod writes a config on first run with every option and a comment
+# explaining it. This file is not a copy of that: it is the handful of
+# settings we want changed, merged into the mod's own config by
+# scripts/server-config.py on every deploy.
+#
+# The claim limits are what a player gets with no LuckPerms override.
+# The "trusted", "mod" and "admin" groups raise them - see
+# scripts/luckperms-groups.sh, which is where those live.
+#
+# These are sized for a Create server. A sorting array or a big factory
+# wants far more than the handful of chunks a vanilla base needs, so the
+# numbers are generous; what is actually scarce is loaded chunks, which
+# is what the forceload limit is for.
+
+# --- Which permission and party system to use ------------------------------
+# "luck_perms", so the xaero.pac_* permissions are managed in LuckPerms
+# rather than in the mod's own built-in system.
+permissionSystem = "luck_perms"
+
+# "default", the built-in party system. The mod's default is
+# "argonauts_guilds", which only works if the Argonauts Guilds addon is
+# installed, and it is not.
+primaryPartySystem = "default"
+
+# --- How much land a player may claim --------------------------------------
+# 400 chunks is about 5,000 blocks square - a large Create base. A party
+# shares one claim, and each extra member adds 100 chunks on top.
+maxPlayerClaims = 400
+claimBonusPerPartyMember = 100
+claimBonusForPartyOwner = 0
+
+# How many chunks a player may keep loaded. This is the one that costs
+# server performance, so it is kept modest: a sorting array needs about
+# six, and a party pools them.
+maxPlayerClaimForceloads = 12
+
+# How many claims a player may grow from an anchor, and how far an anchor
+# may reach. Anchors are how a claim grows past the size of one command.
+maxPlayerClaimingAnchors = 3
+claimingAnchorRange = 16
+
+# The largest claim a single command can make: 121 chunks is 11x11, which
+# covers a base in one go without letting someone sweep up a region.
+maxSingleClaimActionSize = 121
+
+# How close you have to be to the land to claim it.
+maxClaimDistance = 5
+
+# A claim is kept for a year, and then it can be claimed again by
+# whoever is there.
+playerClaimsExpirationTime = 8760
+playerClaimsExpirationCheckInterval = 360
+playerClaimsConvertExpiredClaims = true
+
+# --- Parties ----------------------------------------------------------------
+# A party is a group of players sharing a claim and a chat channel. Eight
+# is a good size for a server this size; more than that and a party stops
+# being a group of friends.
+maxPartyMembers = 8
+maxPartyAllies = 8
+maxPartyInvites = 5
+partyExpirationTime = 720
+partyExpirationCheckInterval = 360
+partyChatLogging = true
+
+# --- A player's own groups within the mod -----------------------------------
+# These are not LuckPerms groups - they are the groups a player sets up
+# for themselves, to give different people different rights over their
+# claim.
+maxPlayerGroups = 5
+playerGroupSpace = 64
+playerSubConfigLimit = 16

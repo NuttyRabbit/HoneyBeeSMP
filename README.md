@@ -188,12 +188,15 @@ it can be rebuilt or changed at any time.
 |---|---|
 | **Information** | `rules`, `announcements`, `server-info` |
 | **Community** | `general`, `media`, `builds` |
-| **Minecraft** | `help`, `whitelist`, `bugs` |
+| **Support** | `help`, `bugs`, `suggestions` |
 | **Staff** | `staff-chat`, `logs` |
 | **Voice** | `lounge`, `gaming`, `afk` |
 
 `rules` and `announcements` are read-only for ordinary members, and the
 whole `Staff` category is hidden from them.
+
+`bugs` and `suggestions` are forum channels, so each report or idea is a
+post of its own rather than a message that gets lost in the scroll.
 
 ## Roles
 

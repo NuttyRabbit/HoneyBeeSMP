@@ -1,21 +1,48 @@
 # HoneyBeeSMP Discord Bot
 
 The bot that looks after the HoneyBeeSMP Discord server. It answers
-questions about the Minecraft server and keeps a channel up to date with
-who is online.
+questions about the Minecraft server, and it sets the server's channels,
+roles and permissions up in the first place.
 
 ## What it does
 
 - `/status` - how the Minecraft server is doing: players online, version,
   and the address to connect to.
 - `/invite` - how to join, including where to get the modpack.
-- A status channel - an embed in a chosen channel showing the player
-  count and version, refreshed in place, along with a message whenever
-  somebody joins or leaves.
+- `/setup` - create the server's channels, roles and permissions, and put
+  the permissions right on anything that is already there. Admins only.
+- New members are given the `Member` role when they join.
 
 The Minecraft server is asked using the ordinary server list ping, so
 nothing has to be installed or configured on the Minecraft side, and no
 credentials are needed for it.
+
+## The server layout
+
+`/setup` (or `scripts/discord-setup.py`) puts this in place:
+
+    Information   rules, announcements, server-info
+    Community     general, media, builds
+    Minecraft     help, whitelist, bugs
+    Staff         staff-chat, logs
+    Voice         lounge, gaming, afk
+
+And these roles, from the top down:
+
+    HoneyBee     the bot
+    Owner        the server owner
+    Admin        runs the server
+    Moderator    keeps the community in order
+    Builder      trusted on the Minecraft server
+    Member       everybody else
+
+The bot's role sits at the top so that it can hand out the roles below it.
+`#rules` and `#announcements` are read-only for ordinary members, and the
+`Staff` category is hidden from them.
+
+Running the setup again is safe. Anything that already exists is kept and
+repaired rather than made again, so it can be used whenever the layout
+changes.
 
 ## Layout
 
@@ -53,3 +80,4 @@ falls over. Logs are in `journalctl -u honeybeesmp-discord-bot.service`.
 | `SERVER_ADDRESS` | the Minecraft server's address |
 | `SERVER_PORT` | the Minecraft server's port |
 | `POLL_SECONDS` | how often to check the player list |
+| `DISCORD_COMMAND_SCOPE` | `guild` for this server only, `global` for all |

@@ -125,88 +125,56 @@ if [ -f "$JVM_ARGS_SRC" ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# 2. Sync NeoForge config
+# 2. Sync the modpack config
 # ---------------------------------------------------------------------------
-# These are the server's behaviour settings (world generation, tick rates,
-# dimension rules...). Syncing these is how a config change is promoted from
-# dev to live.
-for sub in config defaultconfigs; do
-	if [ ! -d "$MC_SRC/$sub" ]; then
-		continue
-	fi
-	echo "    syncing $sub/"
-	sudo mkdir -p "$TARGET/$sub"
-	# The server runs as the "opc" user, so the files must be owned by it
-	# (and group root, matching the rest of the server directory) or the
-	# server cannot write its own config.
-	sudo rsync -a \
-		--no-group --no-perms --omit-dir-times \
-		--chown=opc:root \
-		"$MC_SRC/$sub/" "$TARGET/$sub/"
+# The pack's "overrides" are the config that applies to both the client and
+# the server; "server-overrides" is server-only. Syncing these is how a
+# config change is promoted from dev to live.
+#
+# The server runs as the "opc" user, so the files must be owned by it (and
+# group root, matching the rest of the server directory) or the server
+# cannot write its own config.
+PACK_SRC="$MC_SRC/modpack"
+for pair in "overrides:config defaultconfigs" "server-overrides:server-overrides"; do
+	src_name=${pair%%:*}
+	dst_names=${pair#*:}
+	[ -d "$PACK_SRC/$src_name" ] || continue
+	for dst in $dst_names; do
+		[ -d "$PACK_SRC/$src_name/$dst" ] || continue
+		echo "    syncing $src_name/$dst -> $dst/"
+		sudo mkdir -p "$TARGET/$dst"
+		sudo rsync -a \
+			--no-group --no-perms --omit-dir-times \
+			--chown=opc:root \
+			"$PACK_SRC/$src_name/$dst/" "$TARGET/$dst/"
+	done
 done
 
 # ---------------------------------------------------------------------------
-# 3. Reconcile mods
+# 3. Install the server-side mods
 # ---------------------------------------------------------------------------
-# Every mod listed in the manifest must exist on the server; any mod on the
-# server that is not listed is removed. This keeps dev and live identical.
-MANIFEST="$MC_SRC/mods/mods.manifest"
-if [ -f "$MANIFEST" ]; then
-	echo "    reconciling mods"
-	sudo mkdir -p "$TARGET/mods"
-
-	# Build the list of wanted mod filenames.
-	wanted=$(mktemp)
-	grep -vE '^\s*(#|$)' "$MANIFEST" | awk '{print $1}' | sort > "$wanted"
-
-	# Download anything that is missing.
-	while read -r name url; do
-		[ -n "$name" ] || continue
-		if sudo test -f "$TARGET/mods/$name"; then
-			continue
-		fi
-		if [ -z "${url:-}" ]; then
-			echo "    mod '$name' listed with no URL - skipping download" >&2
-			continue
-		fi
-		echo "    downloading $name"
-		tmp_jar=$(mktemp)
-		if curl -fsSL "$url" -o "$tmp_jar"; then
-			# Sanity check: a mod jar is a zip, so it must start with "PK".
-			# A failed download can leave an HTML error page, which would
-			# stop the Minecraft server from starting.
-			if ! head -c 2 "$tmp_jar" | grep -q "PK"; then
-				echo "    FAILED to download $name (not a jar file) - skipping" >&2
-				rm -f "$tmp_jar"
-				continue
-			fi
-			sudo mv "$tmp_jar" "$TARGET/mods/$name"
-			# Match the permissions of the other files in the server
-			# directory: owned by the server user, world-readable.
-			sudo chown opc:root "$TARGET/mods/$name" 2>/dev/null || true
-			sudo chmod 644 "$TARGET/mods/$name" 2>/dev/null || true
-		else
-			echo "    FAILED to download $name" >&2
-			rm -f "$tmp_jar"
-		fi
-	done <<EOF
-$(grep -vE '^\s*(#|$)' "$MANIFEST")
-EOF
-
-	# Remove mods that are no longer listed.
-	sudo ls -1 "$TARGET/mods" 2>/dev/null | while read -r present; do
-		[ -n "$present" ] || continue
-		case "$present" in
-		*.jar) ;;
-		*) continue ;;
-		esac
-		if ! grep -qxF "$present" "$wanted"; then
-			echo "    removing unlisted mod $present"
-			sudo rm -f "$TARGET/mods/$present"
-		fi
-	done
-	rm -f "$wanted"
+# The pack is the single source of truth for the mod set. It records which
+# side each file belongs to, so the server only installs the ones marked
+# for it, and every download is checked against the hash in the pack.
+#
+# This is scripts/modpack.py rather than shell, because it has to read JSON
+# and verify SHA-512 hashes. It is the same code that builds the pack
+# players download, so the two can never disagree.
+echo "    installing mods from the pack"
+sudo mkdir -p "$TARGET/mods"
+MODS_STAGE=$(mktemp -d)
+if python3 "$REPO_ROOT/scripts/modpack.py" install "$MODS_STAGE"; then
+	sudo rsync -a \
+		--no-group --no-perms --omit-dir-times \
+		--chown=opc:root \
+		--chmod=F644 \
+		"$MODS_STAGE/" "$TARGET/mods/"
+else
+	echo "    FAILED to install mods from the pack" >&2
+	rm -rf "$MODS_STAGE"
+	exit 1
 fi
+rm -rf "$MODS_STAGE"
 
 # ---------------------------------------------------------------------------
 # 4. Restart (optional)

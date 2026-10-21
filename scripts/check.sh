@@ -74,6 +74,32 @@ else
 	ok "website/index.html tracked"
 fi
 
+echo "== check: modpack =="
+# The pack index is the source of truth for the mods we run, so it has to
+# stay valid and consistent with the environments it is built for.
+if [ -f minecraft/modpack/modrinth.index.json ]; then
+	if command -v python3 > /dev/null 2>&1; then
+		if python3 scripts/modpack.py list > /dev/null 2>&1; then
+			ok "modpack index is valid"
+		else
+			bad "modpack index is not valid - run: python3 scripts/modpack.py list"
+		fi
+	else
+		ok "modpack index present (python3 not available to validate)"
+	fi
+
+	# Mod jars must not be committed - they are large binaries that the
+	# deploy downloads and verifies by hash.
+	if git ls-files | grep -qiE '\.jar$'; then
+		bad "a .jar file is tracked - mod jars belong in the pack index, not git:"
+		git ls-files | grep -iE '\.jar$' | sed 's/^/       /'
+	else
+		ok "no .jar files tracked"
+	fi
+else
+	bad "minecraft/modpack/modrinth.index.json is missing"
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then
 	echo "all checks passed"

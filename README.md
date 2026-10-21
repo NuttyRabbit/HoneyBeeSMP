@@ -241,6 +241,10 @@ not in git - the server downloads and verifies them.
    required dependencies automatically**, so you will not hit "requires X or
    above" on the server.
 
+   It also moves the pack's version on, because the pack's contents have
+   changed. Modrinth will not accept a version number it has already seen,
+   so the version has to move for there to be anything new to publish.
+
 2. **Push it.** The deploy installs it on the dev server.
 
    ```sh

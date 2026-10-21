@@ -33,6 +33,19 @@ live) BRANCH=main ;;
 	;;
 esac
 
+# A lock, so the systemd timer and a GitHub Actions run never deploy at
+# the same time. Both switch this working copy to a different branch, so
+# running them together would race. Whichever gets the lock first does the
+# work; the other waits for it and then finds nothing to do.
+LOCK=/var/lock/honeybeesmp-deploy-$ENV.lock
+if ! exec 9>"$LOCK" 2>/dev/null; then
+	exec 9>"/tmp/honeybeesmp-deploy-$ENV.lock"
+fi
+if ! flock -w 300 9; then
+	echo "timed out waiting for the deploy lock" >&2
+	exit 1
+fi
+
 echo "==> branch: $BRANCH  (environment: $ENV)"
 
 # The working copy is switched to the branch this environment deploys from.

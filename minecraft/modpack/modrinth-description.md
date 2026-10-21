@@ -16,6 +16,9 @@ the pack from the **Files** tab - it is a Modrinth pack, so Modrinth App
 and Prism Launcher both handle it, and they will offer you updates when
 the server changes.
 
+This is a **PvE** server - you fight the game, not other players. Claim
+your land with Open Parties and Claims so your builds are safe.
+
 ## What the server is
 
 A community server where the point is building things. Create is the
@@ -67,7 +70,7 @@ The server also runs LuckPerms for permissions, Open Parties and Claims so
 you can protect your builds, and KubeJS. Those are server-side only - you
 do not need them.
 
-53 mods in all, chosen to work well together rather than to be the biggest
+50 mods in all, chosen to work well together rather than to be the biggest
 set possible.
 
 ## Reporting problems

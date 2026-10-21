@@ -10,7 +10,7 @@ clicks play gets exactly this pack installed, and is told when it changes.
 
 ## What is in the pack
 
-53 mods, chosen to be a coherent set rather than the biggest one possible.
+50 mods, chosen to be a coherent set rather than the biggest one possible.
 
 ### Create and factory building
 
@@ -37,15 +37,12 @@ skips them and the server still installs them.
 |---|---|
 | LuckPerms | Permissions. |
 | Open Parties and Claims | Claims, parties and grief protection. |
-| Open Parties and Claims: PvP Support | Lets players fight inside their claims. |
-| Open Parties and Claims: Essentials | Commands and conveniences for claims. |
 | KubeJS | Server-side scripting. |
 | Lithium | Tick performance. |
 | ModernFix | Memory and startup performance. |
 | Noisium | Fewer random ticks, which matters on a server full of machinery. |
 | AntiXray | Stops ore and cave reveals through the server. |
 | Spark | Profiler. Run `/spark` to see where the time goes. |
-| Necronomicon API | Required by Open Parties and Claims. |
 
 ### Quality of life
 
@@ -103,9 +100,22 @@ what a player installs - and they can never drift apart.
 The pack also records a SHA-512 hash for every file, so a download that is
 corrupted or tampered with is caught rather than silently installed.
 
-Of the 53 mods, 26 are installed on the server and 27 on players' clients.
+Of the 50 mods, 43 are installed on the server and 46 on players' clients.
 Mods that are on neither, or on both, sit in between - the pack records
 each file's split exactly.
+
+## PvE, not PvP
+
+This is a PvE server: players fight the game, not each other. Two things
+make that true:
+
+- `server.properties` has `pvp=false`, which is vanilla's own switch.
+- **Open Parties and Claims: PvP Support** is deliberately *not* in the
+  pack. Open Parties and Claims itself has no PvP handling at all - that
+  all lives in the addon, and without the addon there is nothing to turn
+  on. Its "Essentials" addon is out for a different reason: it bundles
+  brassui, which needs Kotlin for Forge, and Kotlin for Forge is not on
+  Modrinth.
 
 ## Layout
 
@@ -192,7 +202,7 @@ follow:
 
 ### A note on the pack's size
 
-53 mods is a lot, and some of them pull in a fair bit underneath - Create
+50 mods is a lot, and some of them pull in a fair bit underneath - Create
 Ore Excavation needs Sinytra Connector and Forgified Fabric API to run on
 NeoForge, which is how it ships for 1.21.1. If the server starts slowly
 or a mod misbehaves, that pairing is worth looking at first.

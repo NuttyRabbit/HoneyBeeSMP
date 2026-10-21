@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "game": "minecraft",
-  "versionId": "1.0.3",
+  "versionId": "1.0.5",
   "name": "HoneyBeeSMP",
   "summary": "The mods and configs for the HoneyBeeSMP Minecraft server.",
   "files": [
@@ -471,21 +471,6 @@
       "fileSize": 1903256
     },
     {
-      "path": "mods/opacpvp-neoforge-1.0.1-1.21.1.jar",
-      "hashes": {
-        "sha1": "b5edf5f6633e693be24548bb6d8e5f4e56db71ea",
-        "sha512": "e32f2db3ecc7f89ec9b76133dcc15dfab97bc3964ffc0a63f745521b85f5660c22a03dae7d495e85286b3efd156be07f476ca7faa9d2f5cf0af8343ffc5301d5"
-      },
-      "env": {
-        "client": "unsupported",
-        "server": "required"
-      },
-      "downloads": [
-        "https://cdn.modrinth.com/data/xcparckV/versions/6AhVNkOg/opacpvp-neoforge-1.0.1-1.21.1.jar"
-      ],
-      "fileSize": 8749
-    },
-    {
       "path": "mods/xaeroworldmap-neoforge-1.21.1-1.47.0.jar",
       "hashes": {
         "sha1": "2936c9cb9dfbdab145fe6f1e8ae2c68915246a5f",
@@ -694,21 +679,6 @@
         "https://cdn.modrinth.com/data/iHLDc0eo/versions/uPFbnD32/better-advanced-tooltips-2101.1.0-build.5.jar"
       ],
       "fileSize": 37653
-    },
-    {
-      "path": "mods/Necronomicon-NeoForge-1.6.0+1.21.jar",
-      "hashes": {
-        "sha1": "4d81055810e07a94b68d16ab20ec298ad0d597a0",
-        "sha512": "fc564e55e8cc2050261db9540afbdbab9ebf6559c1c5cae58ab4a3d4d1b7f1b0842459e5ea1bc780e03fed620a0a2af6bbe1eace037d6a1411ae853dc5e77dae"
-      },
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "downloads": [
-        "https://cdn.modrinth.com/data/P1Kv5EAO/versions/4iO8Tbfj/Necronomicon-NeoForge-1.6.0%2B1.21.jar"
-      ],
-      "fileSize": 29865
     },
     {
       "path": "mods/badpackets-neo-0.8.2.jar",

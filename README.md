@@ -59,6 +59,9 @@ works for everyone else too.
 | Server address | `play.honeybeesmp.co.uk` |
 | Server port | 25566 |
 
+This is a **PvE** server - you fight the game, not other players. Claim
+your land with Open Parties and Claims so your builds are safe.
+
 ### Install the modpack
 
 The server is listed on [Modrinth](https://modrinth.com/server/honeybeesmp),
@@ -90,7 +93,7 @@ and try again.
 
 ## What is in the pack
 
-53 mods, chosen to work well together rather than to be the biggest set
+50 mods, chosen to work well together rather than to be the biggest set
 possible.
 
 ### Create and factory building

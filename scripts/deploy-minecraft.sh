@@ -284,19 +284,33 @@ done
 # players download, so the two can never disagree.
 echo "    installing mods from the pack"
 sudo mkdir -p "$TARGET/mods"
+# Remember what is there now, so the log says what was taken away. A mod
+# that leaves the pack has to actually leave the server - otherwise the
+# server keeps loading it, and the crash it causes shows up long after
+# the change that caused it.
+BEFORE=$(mktemp)
+sudo ls -1 "$TARGET/mods" 2>/dev/null | sort > "$BEFORE"
 MODS_STAGE=$(mktemp -d)
 if python3 "$REPO_ROOT/scripts/modpack.py" install "$MODS_STAGE"; then
-	sudo rsync -a \
+	# --delete makes the server's mods directory exactly the pack. Without
+	# it the directory only ever grows.
+	sudo rsync -a --delete \
 		--no-group --no-perms --omit-dir-times \
 		--chown=opc:root \
 		--chmod=F644 \
 		"$MODS_STAGE/" "$TARGET/mods/"
+	AFTER=$(mktemp)
+	sudo ls -1 "$TARGET/mods" | sort > "$AFTER"
+	comm -23 "$BEFORE" "$AFTER" | while read -r gone; do
+		[ -n "$gone" ] && echo "    removed $gone"
+	done
+	rm -f "$AFTER"
 else
 	echo "    FAILED to install mods from the pack" >&2
-	rm -rf "$MODS_STAGE"
+	rm -rf "$MODS_STAGE" "$BEFORE"
 	exit 1
 fi
-rm -rf "$MODS_STAGE"
+rm -rf "$MODS_STAGE" "$BEFORE"
 
 # ---------------------------------------------------------------------------
 # 4. Restart (optional)

@@ -32,6 +32,9 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 User=$RUN_USER
+# systemd does not always export HOME for a system service, and the deploy
+# state (which commit each environment is running) is kept under HOME.
+Environment=HOME=/home/$RUN_USER
 WorkingDirectory=$REPO_ROOT
 ExecStart=/bin/sh $REPO_ROOT/scripts/autodeploy.sh $env
 # A deploy should never overlap with itself.

@@ -174,9 +174,10 @@ jobs:
             else
               echo "::error::Connected, but the deploy on the server failed (exit $rc)."
               echo "::error::The output above is from the server. Common causes:"
-              echo "::error::  - the working copy on the server had local changes that"
-              echo "::error::    could not be stashed, so the branch was not switched"
-              echo "::error::  - the pull failed (another deploy was running?)"
+              echo "::error::  - the branch could not be checked out, or the pull failed"
+              echo "::error::  - another deploy held the lock for longer than 10 minutes"
+              echo "::error::  - the sanity checks (scripts/check.sh) failed"
+              echo "::error::  - the deploy itself failed (check the output above)"
             fi
             echo "::error::The known_hosts entry in use is printed above."
             exit "$rc"

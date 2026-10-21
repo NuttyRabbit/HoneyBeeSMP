@@ -61,23 +61,26 @@ if [ -z "$REMOTE" ]; then
 	exit 0
 fi
 
-# What the working copy currently has. It may be on the other branch, so
-# compare against that branch's remote rather than against HEAD.
-LOCAL=$(git rev-parse "origin/$BRANCH" 2>/dev/null || echo "")
-DEPLOYED=$(git rev-parse HEAD 2>/dev/null || echo "")
+# The commit this environment is currently running. update.sh records it
+# after a successful deploy.
+#
+# It cannot be taken from HEAD: there is one working copy shared by both
+# environments, so HEAD is whichever branch was deployed last. Comparing
+# against HEAD would make each environment redeploy the other's commit
+# every minute, forever.
+STATE_DIR="${HOME:-/tmp}/.cache/honeybeesmp"
+DEPLOYED=$(cat "$STATE_DIR/deployed-$ENV.sha" 2>/dev/null || echo "")
 
-# Is the branch we deploy from ahead of what is checked out?
-if git diff --quiet "origin/$BRANCH" HEAD 2>/dev/null; then
-	# Same tree - nothing to deploy. Make sure the working copy is on the
-	# right branch so the next deploy is not blocked by a stale checkout.
-	current=$(git rev-parse --abbrev-ref HEAD)
-	if [ "$current" != "$BRANCH" ]; then
-		git checkout --quiet "$BRANCH" 2>/dev/null || true
-	fi
+# Nothing to do: this environment is already running the latest commit.
+if [ "$DEPLOYED" = "$REMOTE" ]; then
 	exit 0
 fi
 
-echo "==> new commit on $BRANCH: $(git rev-parse --short "$DEPLOYED") -> $(git rev-parse --short "$REMOTE")"
+if [ -z "$DEPLOYED" ]; then
+	echo "==> no record of a previous deploy for $ENV - deploying $(echo "$REMOTE" | cut -c1-7)"
+else
+	echo "==> new commit on $BRANCH: $(echo "$DEPLOYED" | cut -c1-7) -> $(echo "$REMOTE" | cut -c1-7)"
+fi
 
 # Hand the lock down to update.sh as fd 9 and leave it open. The lock
 # belongs to the open file description, so the child shares it and its

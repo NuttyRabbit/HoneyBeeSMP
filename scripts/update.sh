@@ -33,6 +33,11 @@ live) BRANCH=main ;;
 	;;
 esac
 
+# Where the commit each environment is running is recorded. The polling
+# backstop (scripts/autodeploy.sh) reads it to decide whether there is
+# anything to deploy.
+STATE_DIR="${HOME:-/tmp}/.cache/honeybeesmp"
+
 # A lock, so that two deploys never run at the same time.
 #
 # The lock is GLOBAL, not per-environment, and that matters: there is only
@@ -57,45 +62,56 @@ fi
 
 echo "==> branch: $BRANCH  (environment: $ENV)"
 
-# A dirty working tree would stop both the checkout and the pull ("local
-# changes would be overwritten"). That happens if someone edits files on
-# the server directly. Stash them FIRST, before switching branches -
-# otherwise git refuses to switch to a branch where the edited file
-# differs, and the deploy would silently run against the wrong branch.
-STASHED=0
+# Fetch first, so the ref below is current. Without this the GitHub
+# Actions path - which SSHes in and runs this script directly - works from
+# a stale origin/BRANCH and can deploy an old commit while reporting
+# success.
+git fetch --quiet origin "$BRANCH" 2>/dev/null || {
+	echo "could not fetch origin/$BRANCH - aborting" >&2
+	exit 1
+}
+
+# The working copy on the server is a deployment target, not a place to
+# work. Local edits are overwritten by the next deploy anyway, and local
+# commits are not ours to keep, so the branch is reset to exactly what is
+# on GitHub.
+#
+# Stashing used to be used here, and it was a source of real failures: a
+# stash made on one branch cannot be popped cleanly onto another, and a
+# failed pop leaves the tree in a state where the *next* run cannot even
+# stash either - so every later deploy fails with "could not stash local
+# changes". A reset cannot fail that way.
 if [ -n "$(git status --porcelain)" ]; then
-	echo "    working tree has local changes - stashing them"
-	if git stash push --include-untracked -m "autodeploy $(date -u +%Y%m%d-%H%M%S)" >/dev/null 2>&1; then
-		STASHED=1
-	else
-		echo "    could not stash local changes - aborting rather than deploy the wrong branch" >&2
-		exit 1
-	fi
+	echo "    discarding local changes on the server"
+	echo "    (edit in the repo and push - the server's copy is regenerated)"
+	git reset --hard > /dev/null 2>&1 || true
+	git clean -fdq > /dev/null 2>&1 || true
 fi
 
-# The working copy is switched to the branch this environment deploys from.
+# Switch to the branch this environment deploys from, and make it match
+# origin exactly. -B resets the branch to the given start point, so a
+# diverged local branch cannot wedge the deploy.
 current=$(git rev-parse --abbrev-ref HEAD)
 if [ "$current" != "$BRANCH" ]; then
 	echo "    switching from $current to $BRANCH"
-	if ! git checkout "$BRANCH"; then
-		echo "could not switch to $BRANCH - aborting" >&2
-		exit 1
-	fi
 fi
-
-echo "==> pulling from origin"
-before=$(git rev-parse HEAD)
-# Pull the remote branch into the *current* branch explicitly. Naming the
-# ref "origin/$BRANCH" and the destination "HEAD" avoids git's ambiguous
-# "Cannot fast-forward to multiple branches" error, which happens when the
-# local branch name also matches a remote-tracking branch.
-git merge --ff-only "origin/$BRANCH"
+# What this environment was running before, so the log says what changed.
+# Not HEAD: there is one working copy shared by both environments, so HEAD
+# is whichever branch was deployed last.
+before=$(cat "$STATE_DIR/deployed-$ENV.sha" 2>/dev/null || echo "")
+if ! checkout_out=$(git checkout -f -B "$BRANCH" "origin/$BRANCH" 2>&1); then
+	echo "could not switch to $BRANCH - aborting" >&2
+	echo "$checkout_out" >&2
+	exit 1
+fi
 after=$(git rev-parse HEAD)
 
-if [ "$before" = "$after" ]; then
+if [ -z "$before" ]; then
+	echo "    deploying $(git rev-parse --short "$after")"
+elif [ "$before" = "$after" ]; then
 	echo "    already up to date ($(git rev-parse --short HEAD))"
 else
-	echo "    updated $(git rev-parse --short "$before") -> $(git rev-parse --short "$after")"
+	echo "    updated $(echo "$before" | cut -c1-7) -> $(git rev-parse --short "$after")"
 fi
 
 echo
@@ -110,14 +126,10 @@ echo
 echo "==> reloading nginx"
 sudo nginx -t && sudo systemctl reload nginx
 
-# Put back anything we stashed. The deployed copy is regenerated from the
-# repo, so restoring is only to avoid surprising whoever was editing.
-if [ "$STASHED" = "1" ]; then
-	echo
-	echo "==> restoring stashed local changes"
-	git stash pop >/dev/null 2>&1 || {
-		echo "    could not restore automatically; your changes are in 'git stash list'"
-	}
-fi
+# Record the commit this environment is now running, so the polling
+# backstop (scripts/autodeploy.sh) can tell whether there is anything to
+# do next time.
+mkdir -p "$STATE_DIR"
+git rev-parse HEAD > "$STATE_DIR/deployed-$ENV.sha"
 
 echo "update complete ($ENV)"

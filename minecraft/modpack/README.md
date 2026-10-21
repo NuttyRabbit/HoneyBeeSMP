@@ -10,7 +10,7 @@ clicks play gets exactly this pack installed, and is told when it changes.
 
 ## What is in the pack
 
-60 mods, chosen to be a coherent set rather than the biggest one possible.
+65 mods, chosen to be a coherent set rather than the biggest one possible.
 
 ### Create and factory building
 
@@ -23,6 +23,7 @@ clicks play gets exactly this pack installed, and is told when it changes.
 | Create: Ore Excavation | The drill rebalance, which is what makes Create's mining loop worth playing. |
 | Create: Numismatics | Currency, so the factory has something to be worth. |
 | Sophisticated Storage | Storage blocks, and the drawers Create fills them with. |
+| Sophisticated Backpacks | A backpack you can carry, and use on a conveyor. |
 | Productive Bees | Bees, and the automation built around them. |
 | FastSuite / FastWorkbench | Crafting speed, so a big factory is not painful to use. |
 | Ritchie's Projectile Library | Required by Big Cannons. |
@@ -83,6 +84,8 @@ skips them and the server still installs them.
 | YUNG's Better Caves | Caverns and cave systems worth finding. |
 | YUNG's Better Nether Fortresses | Fortresses that are not all the same shape. |
 | YUNG's Better End Island | A proper central island for the dragon fight. |
+| YUNG's Better Strongholds | The stronghold is where the End portal is - this one is worth going to. |
+| YUNG's Better Ocean Monuments | Ocean monuments worth the dive for. |
 | MVS - Moog's Voyager Structures | Villages, outposts and the rest of the overworld's structures. |
 | MES - Moog's End Structures | The End, filled with things. |
 | Hopo Better Ruined Portals | Ruined portals in every dimension. |
@@ -108,7 +111,7 @@ what a player installs - and they can never drift apart.
 The pack also records a SHA-512 hash for every file, so a download that is
 corrupted or tampered with is caught rather than silently installed.
 
-Of the 60 mods, 53 are installed on the server and 47 on players' clients.
+Of the 65 mods, 58 are installed on the server and 50 on players' clients.
 Mods that are on neither, or on both, sit in between - the pack records
 each file's split exactly.
 
@@ -227,7 +230,7 @@ follow:
 
 ### A note on the pack's size
 
-60 mods is a lot, and some of them pull in a fair bit underneath - Create
+65 mods is a lot, and some of them pull in a fair bit underneath - Create
 Ore Excavation needs Sinytra Connector and Forgified Fabric API to run on
 NeoForge, which is how it ships for 1.21.1. If the server starts slowly
 or a mod misbehaves, that pairing is worth looking at first.

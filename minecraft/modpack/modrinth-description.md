@@ -7,7 +7,7 @@ The official modpack for the **HoneyBeeSMP** Minecraft server.
 | Minecraft | 1.21.1 |
 | Mod loader | NeoForge 21.1.264 |
 | Server port | 25566 |
-| Server address | `honeybeesmp.co.uk` |
+| Server address | `play.honeybeesmp.co.uk` |
 
 ## How to install
 

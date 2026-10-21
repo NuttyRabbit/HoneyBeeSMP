@@ -15,6 +15,7 @@
 #   ./scripts/crafty.sh stop    <server-id>
 #   ./scripts/crafty.sh restart <server-id>
 #   ./scripts/crafty.sh status  <server-id>
+#   ./scripts/crafty.sh cmd     <server-id> "<console command>"
 #
 # Exit: 0 on success, non-zero on failure.
 
@@ -25,9 +26,13 @@ API="https://127.0.0.1:8443/api/v2"
 
 ACTION=${1:-}
 SERVER_ID=${2:-}
+# The rest of the arguments, for "cmd".
+shift 2 2>/dev/null || true
+COMMAND=${*:-}
 
 usage() {
 	echo "usage: $0 {start|stop|restart|status} <server-id>" >&2
+	echo "       $0 cmd <server-id> \"<console command>\"" >&2
 	exit 2
 }
 
@@ -35,6 +40,9 @@ usage() {
 
 case "$ACTION" in
 start | stop | restart | status) ;;
+cmd)
+	[ -n "$COMMAND" ] || usage
+	;;
 *) usage ;;
 esac
 
@@ -114,6 +122,17 @@ status)
 	else
 		echo "stopped"
 	fi
+	;;
+cmd)
+	# The panel's own "/action/<word>" route only matches a single
+	# lowercase word, so it cannot send a command with spaces in it. The
+	# stdin route takes the whole body as the command, which is what the
+	# panel's own console uses.
+	echo "sending: $COMMAND"
+	result=$(api -X POST "$API/servers/$SERVER_ID/stdin" \
+		-H "Content-Type: text/plain" \
+		--data-binary "$COMMAND")
+	echo "$result"
 	;;
 esac
 

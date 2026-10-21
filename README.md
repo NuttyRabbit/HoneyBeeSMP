@@ -31,6 +31,7 @@ works for everyone else too.
 - [Add a mod](#add-a-mod)
 - [Remove a mod](#remove-a-mod)
 - [Change the Minecraft config](#change-the-minecraft-config)
+- [The whitelist](#the-whitelist)
 - [Change the world type](#change-the-world-type)
 - [Restart a Minecraft server](#restart-a-minecraft-server)
 - [Publish the modpack](#publish-the-modpack)

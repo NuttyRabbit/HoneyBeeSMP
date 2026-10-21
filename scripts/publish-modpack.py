@@ -349,6 +349,22 @@ def upload_pack_version(
     return result
 
 
+def sync_address(token: str, project_id: str) -> None:
+    """Make sure the listing says the address the server actually uses.
+
+    The address is read from the live environment's config, so if the
+    domain or the port ever changes, this keeps the Modrinth listing
+    honest instead of sending players to a host that has moved.
+    """
+    api_json(
+        "PATCH",
+        f"/project/{project_id}",
+        token,
+        {"minecraft_java_server": {"address": server_address()}},
+        v3=True,
+    )
+
+
 def point_content_at(token: str, project_id: str, version_id: str) -> None:
     """Tell the project which version of the pack players need.
 
@@ -456,6 +472,9 @@ def cmd_publish(args) -> int:
         current = api_get(f"/version/{current_id}", token, missing_ok=True, v3=True)
         if current and current.get("version_number") == version_number:
             info(f"version {version_number} is already published - nothing to do")
+            # Still check the address: the listing should always say where
+            # the server actually is, and this costs one request.
+            sync_address(token, project_id)
             return 0
 
     changelog = args.changelog or f"Modpack {version_number}"
@@ -540,7 +559,14 @@ def cmd_status(args) -> int:
 
     server = project.get("minecraft_server") or {}
     java = project.get("minecraft_java_server") or {}
-    info(f"  address:  {java.get('address')}")
+    address = java.get("address")
+    info(f"  address:  {address}")
+    try:
+        expected = server_address()
+        if address != expected:
+            info(f"  WARNING:  the listing says {address}, the server is {expected}")
+    except SystemExit:
+        pass
     info(f"  players:  {server.get('max_players')}")
     info(
         f"  where:    {server.get('country')} / {server.get('region')} / "

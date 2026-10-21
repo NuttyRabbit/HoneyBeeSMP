@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "game": "minecraft",
-  "versionId": "1.0.6",
+  "versionId": "1.0.7",
   "name": "HoneyBeeSMP",
   "summary": "The mods and configs for the HoneyBeeSMP Minecraft server.",
   "files": [
@@ -769,6 +769,141 @@
         "https://cdn.modrinth.com/data/fALzjamp/versions/LuFhm4eU/Chunky-NeoForge-1.4.23.jar"
       ],
       "fileSize": 340572
+    },
+    {
+      "path": "mods/YungsBetterMineshafts-1.21.1-NeoForge-5.1.1.jar",
+      "hashes": {
+        "sha1": "6a14e1d8201f068ca87ef8333e471c5378955906",
+        "sha512": "8b01b386f53feeaa55f0c62697578b82e00501e45e428b2a68df6bda34efb6a4b3b4e3582abf13fe767ebcb61aef9368186f53c03999958bef38f31c41a7f8b2"
+      },
+      "env": {
+        "client": "unsupported",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/HjmxVlSr/versions/Go3nbneL/YungsBetterMineshafts-1.21.1-NeoForge-5.1.1.jar"
+      ],
+      "fileSize": 493967
+    },
+    {
+      "path": "mods/YungsBetterNetherFortresses-1.21.1-NeoForge-3.1.5.jar",
+      "hashes": {
+        "sha1": "4061ece2141475227646649046fc14c2da505922",
+        "sha512": "18b461298d3df1215fa3b4d2c0cb2ef1c7ed76701d8a0bb140277b21923e31abd939f0fd9b400c5bd676d739f1cda31c43b4dc753f9187251542223f3424d336"
+      },
+      "env": {
+        "client": "unsupported",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/Z2mXHnxP/versions/iopJiJQp/YungsBetterNetherFortresses-1.21.1-NeoForge-3.1.5.jar"
+      ],
+      "fileSize": 609639
+    },
+    {
+      "path": "mods/YungsBetterEndIsland-1.21.1-NeoForge-3.1.2.jar",
+      "hashes": {
+        "sha1": "832f2c17425debe74a9f267f4136f1a0f0221d19",
+        "sha512": "02923a1a97eb81ec13d69bdc6b7e8b36dfb9e6f1a98adfcf103707ec3afde35831ccd4b210e9b3a9c7662541c38ea593a3d94c12171b4072ea7feafa75c95f96"
+      },
+      "env": {
+        "client": "unsupported",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/2BwBOmBQ/versions/I52NZ1qK/YungsBetterEndIsland-1.21.1-NeoForge-3.1.2.jar"
+      ],
+      "fileSize": 398130
+    },
+    {
+      "path": "mods/YungsBetterCaves-1.21.1-NeoForge-3.1.6.jar",
+      "hashes": {
+        "sha1": "6420fdb345b5e33b3a51254799dc281c9c53d3c5",
+        "sha512": "a5fa3881a32a96c25c8012aac347221363792d68491ae1f6e26d345264f7acff7c7562d6c96e0ee2f00c63ad50351742763a740f0965cc9ca0b97808f8847bba"
+      },
+      "env": {
+        "client": "unsupported",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/Dfu00ggU/versions/Feo6YOjN/YungsBetterCaves-1.21.1-NeoForge-3.1.6.jar"
+      ],
+      "fileSize": 400316
+    },
+    {
+      "path": "mods/MoogsEndStructures-universal-1.21-2.1.1.jar",
+      "hashes": {
+        "sha1": "ef5f57f0e5d06a2f8bec5c073e01ddb061ad477a",
+        "sha512": "5732c98bf3d1e6aa3c76cf23db77301065dd96f060fb9bf85e8af00769bc6a93e213aad7ff79a3116b3cfd5015fe98437bdadf9fdc0dd829eae1759e3c1fee96"
+      },
+      "env": {
+        "client": "unsupported",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/r4PuRGfV/versions/S7bUhX4n/MoogsEndStructures-universal-1.21-2.1.1.jar"
+      ],
+      "fileSize": 2285901
+    },
+    {
+      "path": "mods/MoogsVoyagerStructures-universal-1.21-5.1.3.jar",
+      "hashes": {
+        "sha1": "6759fa57891f731e54f865c13ffa0601a829b76a",
+        "sha512": "80e9e4a6543e8fc7d24d7e1fb4d4245d1d30f9aaf02ae2ba1098956106bea411a4502ce1d4b8fa97b935c9421a0eebf42226a46c8172cbbf621cc8ca16a50457"
+      },
+      "env": {
+        "client": "unsupported",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/OQAgZMH1/versions/PiFoSPXI/MoogsVoyagerStructures-universal-1.21-5.1.3.jar"
+      ],
+      "fileSize": 2234287
+    },
+    {
+      "path": "mods/HopoBetterRuinedPortals-[1.21.1-1.21.3]-1.4.4b.jar",
+      "hashes": {
+        "sha1": "52875dc5fd560c99721565bfced9c47dbff9acfa",
+        "sha512": "5c19550c0d26490b329bf2fe0448dcac39e7a69954f80b7f6158472a4f9d4fffb20e0e71306ad222b18c8a9ba2444bd756df251f2e643a939a48ba4e826e561d"
+      },
+      "env": {
+        "client": "unsupported",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/hIpLSyga/versions/JosVVZQn/HopoBetterRuinedPortals-%5B1.21.1-1.21.3%5D-1.4.4b.jar"
+      ],
+      "fileSize": 460577
+    },
+    {
+      "path": "mods/YungsApi-1.21.1-NeoForge-5.1.9.jar",
+      "hashes": {
+        "sha1": "2c4b740c8ad27bbcb2a21b85b64f011b809aed91",
+        "sha512": "7e3cf0b429e8a1c51dca094c2d8eabf12245bb42cbcd8b6e3e54959f931bef93201b81a08d200b417059aaa438e8eb445c3978a09568597bfb588199b7775967"
+      },
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/Ua7DFN59/versions/2prKITKh/YungsApi-1.21.1-NeoForge-5.1.9.jar"
+      ],
+      "fileSize": 413763
+    },
+    {
+      "path": "mods/MoogsStructureLib-neoforge-1.21.1-3.4.2.jar",
+      "hashes": {
+        "sha1": "c379b8d5dc1a4b1e8987da1052d6b4de81354d72",
+        "sha512": "378d5da579e65e8c37d81aee510302f99b3097f0c6a4245f3621478f741fac3b55a3715227d9408153a66c98624f8fcb5f93e98027212e0f0a82b768315d0651"
+      },
+      "env": {
+        "client": "unsupported",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/1oUDhxuy/versions/wcg4mE4e/MoogsStructureLib-neoforge-1.21.1-3.4.2.jar"
+      ],
+      "fileSize": 1094979
     }
   ],
   "dependencies": {

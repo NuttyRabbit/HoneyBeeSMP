@@ -70,7 +70,7 @@ The server also runs LuckPerms for permissions, Open Parties and Claims so
 you can protect your builds, and KubeJS. Those are server-side only - you
 do not need them.
 
-50 mods in all, chosen to work well together rather than to be the biggest
+60 mods in all, chosen to work well together rather than to be the biggest
 set possible.
 
 ## Reporting problems

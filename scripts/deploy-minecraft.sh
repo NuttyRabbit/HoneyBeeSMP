@@ -58,6 +58,7 @@ GENERATOR_SETTINGS=""
 GENERATE_STRUCTURES=""
 WHITELIST=""
 MAX_PLAYERS=""
+MOTD=""
 while IFS='=' read -r key value; do
 	case "$key" in
 	"") continue ;;
@@ -71,6 +72,7 @@ while IFS='=' read -r key value; do
 	GENERATE_STRUCTURES) GENERATE_STRUCTURES=$value ;;
 	WHITELIST) WHITELIST=$value ;;
 	MAX_PLAYERS) MAX_PLAYERS=$value ;;
+	MOTD) MOTD=$value ;;
 	esac
 done < "$ENV_FILE"
 
@@ -115,6 +117,13 @@ case "$MAX_PLAYERS" in
 	;;
 esac
 
+# The MOTD, too. An empty one would leave the server showing whatever
+# Minecraft's default is, which is not what anyone asked for.
+if [ -z "$MOTD" ]; then
+	echo "env.conf for '$ENV' is missing MOTD" >&2
+	exit 1
+fi
+
 TARGET="$SERVERS_DIR/$SERVER_ID"
 if [ ! -d "$TARGET" ]; then
 	echo "server directory not found: $TARGET" >&2
@@ -145,6 +154,7 @@ GENERATOR_SETTINGS="$GENERATOR_SETTINGS" \
 GENERATE_STRUCTURES="$GENERATE_STRUCTURES" \
 WHITELIST="$WHITELIST" \
 MAX_PLAYERS="$MAX_PLAYERS" \
+MOTD="$MOTD" \
 python3 - "$MC_SRC/server.properties" "$RENDERED" <<'PY'
 import os
 import sys
@@ -158,6 +168,7 @@ values = {
     "@GENERATE_STRUCTURES@": os.environ["GENERATE_STRUCTURES"],
     "@WHITELIST@": os.environ["WHITELIST"],
     "@MAX_PLAYERS@": os.environ["MAX_PLAYERS"],
+    "@MOTD@": os.environ["MOTD"],
 }
 
 with open(src, encoding="utf-8") as fh:

@@ -235,7 +235,7 @@ def cmd_create(args) -> int:
     info(f"  url:      https://modrinth.com/modpack/{result.get('slug')}")
     info(f"  saved to: {STATE_PATH}")
     info("")
-    info("The project is a draft. Publish it for review on Modrinth:")
+    info("The project is a draft. Approve it on Modrinth to make it public:")
     info(f"  https://modrinth.com/project/{project_id}/settings")
     return 0
 

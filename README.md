@@ -229,11 +229,15 @@ sudo grep -A8 "Mod List" /opt/crafty/servers/d48afa12-59a5-496e-829a-1ced86d108b
 **4. Test it, then promote to live.**
 
 Once it works on dev, merge to `main` and push. The live server gets the
-same pack. **Restart the live server too** - it is a separate machine state:
+same pack, and the deploy publishes it to Modrinth so players are offered
+the update. **Restart the live server too** - it is a separate machine state:
 
 ```sh
 make mc-restart              # on the server
 ```
+
+If the deploy does not publish for you, do it by hand - see
+[Giving the pack to players](#giving-the-pack-to-players) below.
 
 ### Removing a mod
 
@@ -245,16 +249,57 @@ gone from disk, but a running server keeps the mod loaded until it restarts.
 
 ### Giving the pack to players
 
-Build it and put it somewhere players can download:
+The pack is published to **Modrinth**, where players install it from.
+Modrinth App and Prism Launcher both watch the project for new versions,
+so when we publish, players are offered the update - nobody has to
+re-download a file by hand.
+
+**One-time setup:**
+
+1. Create a Modrinth account, then a personal access token at
+   <https://modrinth.com/settings/account> with the **Create projects**
+   and **Create versions** scopes.
+2. On the server, save the token:
+
+   ```sh
+   mkdir -p ~/.config/modrinth
+   nano ~/.config/modrinth/token     # paste the token, one line
+   chmod 600 ~/.config/modrinth/token
+   ```
+
+3. Create the project and publish the first version:
+
+   ```sh
+   cd ~/honeybeesmp
+   python3 scripts/publish-modpack.py create
+   python3 scripts/publish-modpack.py publish
+   ```
+
+   `create` saves the project id to `~/.config/modrinth/project-id`.
+
+**Publishing a change:** the pack version has to move forward first,
+because Modrinth refuses a duplicate version number.
 
 ```sh
-python3 scripts/modpack.py build /var/www/honeybeesmp.co.uk/HoneyBeeSMP.mrpack
+python3 scripts/modpack.py bump            # 1.0.0 -> 1.0.1
+python3 scripts/publish-modpack.py publish
 ```
 
-Players import that into Modrinth App, Prism Launcher, ATLauncher or
-CurseForge, and it installs the right mods and configs. Because the pack is
-generated from the same index the server uses, players are always on the
-same version as the server.
+Or, more usually, the live deploy does it for you - it publishes the pack
+after deploying, and skips the step with a clear message if Modrinth is
+not set up yet.
+
+Check the state any time with:
+
+```sh
+python3 scripts/publish-modpack.py status
+```
+
+**For players:** they install the pack from
+<https://modrinth.com/modpack/honeybeesmp> in Modrinth App, Prism
+Launcher or CurseForge. It carries every mod and config we run, and
+because it is generated from the same index the server deploys from, they
+are always on the same version as the server.
 
 ### Checking the server against the pack
 
@@ -459,7 +504,8 @@ browser, then copy that file across.
 │   ├── backup.sh                  rclone snapshot of the live world -> Drive
 │   ├── check.sh                   no secrets / no huge files / ignore rules
 │   ├── crafty.sh                  Crafty panel API: start/stop/restart
-│   ├── modpack.py                 add/list/install/build the modpack
+│   ├── modpack.py                 add/list/install/build/bump the modpack
+│   ├── publish-modpack.py         publish the modpack to Modrinth
 │   ├── deploy-minecraft.sh        apply minecraft/ config to a server
 │   ├── deploy.sh                  repo -> a dev or live environment
 │   ├── install-backup-timer.sh    schedule backup.sh via systemd

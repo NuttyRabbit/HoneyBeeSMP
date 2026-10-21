@@ -418,6 +418,36 @@ def cmd_export(args) -> int:
     return 0
 
 
+def cmd_bump(args) -> int:
+    """Bump the pack version.
+
+    Modrinth refuses to publish a version number that already exists on the
+    project, so the pack version has to move forward before each publish.
+    """
+    index = load_index()
+    current = index.get("versionId", "1.0.0")
+    parts = current.split(".")
+    while len(parts) < 3:
+        parts.append("0")
+
+    try:
+        major, minor, patch = (int(p) for p in parts[:3])
+    except ValueError:
+        die(f"versionId '{current}' is not a plain version number")
+
+    if args.major:
+        major, minor, patch = major + 1, 0, 0
+    elif args.minor:
+        major, minor, patch = major, minor + 1, 0
+    else:
+        patch += 1
+
+    index["versionId"] = f"{major}.{minor}.{patch}"
+    save_index(index)
+    info(f"version: {current} -> {index['versionId']}")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", help="path to the repository (default: autodetected)")
@@ -447,6 +477,11 @@ def main() -> int:
     p = sub.add_parser("export", help="dump the pack as JSON")
     p.add_argument("output")
     p.set_defaults(func=cmd_export)
+
+    p = sub.add_parser("bump", help="bump the pack version")
+    p.add_argument("--major", action="store_true", help="bump the major version")
+    p.add_argument("--minor", action="store_true", help="bump the minor version")
+    p.set_defaults(func=cmd_bump)
 
     args = parser.parse_args()
     return args.func(args)

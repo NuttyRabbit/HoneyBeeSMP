@@ -47,15 +47,24 @@ if [ ! -f "$ENV_FILE" ]; then
 	exit 1
 fi
 
-# Read the environment's settings (SERVER_ID, SERVER_PORT).
+# Read the environment's settings (SERVER_ID, SERVER_PORT, and the world
+# generation settings).
 SERVER_ID=""
 SERVER_PORT=""
+LEVEL_NAME=""
+LEVEL_TYPE=""
+GENERATOR_SETTINGS=""
+GENERATE_STRUCTURES=""
 while IFS='=' read -r key value; do
 	case "$key" in
 	"") continue ;;
 	\#*) continue ;;
 	SERVER_ID) SERVER_ID=$value ;;
 	SERVER_PORT) SERVER_PORT=$value ;;
+	LEVEL_NAME) LEVEL_NAME=$value ;;
+	LEVEL_TYPE) LEVEL_TYPE=$value ;;
+	GENERATOR_SETTINGS) GENERATOR_SETTINGS=$value ;;
+	GENERATE_STRUCTURES) GENERATE_STRUCTURES=$value ;;
 	esac
 done < "$ENV_FILE"
 
@@ -75,9 +84,35 @@ echo "==> environment: $ENV (server $SERVER_ID, port $SERVER_PORT)"
 # ---------------------------------------------------------------------------
 # 1. Render server.properties
 # ---------------------------------------------------------------------------
-# The template carries @SERVER_PORT@; the environment supplies the real value.
+# The template carries @PLACEHOLDER@ markers; the environment supplies the
+# real values.
+#
+# The values are substituted with a small python helper rather than sed,
+# because generator-settings is JSON containing "/" and "&", which are
+# special in a sed replacement.
 RENDERED=$(mktemp)
-sed "s/@SERVER_PORT@/$SERVER_PORT/g" "$MC_SRC/server.properties" > "$RENDERED"
+python3 - "$MC_SRC/server.properties" "$RENDERED" \
+	"$SERVER_PORT" "$LEVEL_NAME" "$LEVEL_TYPE" "$GENERATOR_SETTINGS" "$GENERATE_STRUCTURES" <<'PY'
+import sys
+
+src, dest = sys.argv[1], sys.argv[2]
+values = {
+    "@SERVER_PORT@": sys.argv[3],
+    "@LEVEL_NAME@": sys.argv[4],
+    "@LEVEL_TYPE@": sys.argv[5],
+    "@GENERATOR_SETTINGS@": sys.argv[6],
+    "@GENERATE_STRUCTURES@": sys.argv[7],
+}
+
+with open(src, encoding="utf-8") as fh:
+    text = fh.read()
+
+for key, value in values.items():
+    text = text.replace(key, value)
+
+with open(dest, "w", encoding="utf-8") as fh:
+    fh.write(text)
+PY
 
 # Compare against what the server currently has, ignoring the timestamp
 # comment Minecraft rewrites on every start. Only write when it differs, so

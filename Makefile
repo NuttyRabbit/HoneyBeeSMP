@@ -126,7 +126,7 @@ backup-log: ## Show the backup log
 
 # --- Modpack ----------------------------------------------------------------
 
-modpack: modpack-status ## Show what is in the modpack
+modpack: ## Show what is in the modpack
 	@python3 "$(REPO_DIR)/scripts/modpack.py" list
 
 modpack-add: ## Add a mod to the modpack: make modpack-add SLUG=create

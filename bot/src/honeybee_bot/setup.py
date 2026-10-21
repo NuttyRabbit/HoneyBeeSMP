@@ -51,10 +51,11 @@ class RoleSpec:
 @dataclass
 class ChannelSpec:
     name: str
-    kind: str  # "text", "voice"
+    kind: str  # "text", "voice", "forum"
     topic: str = ""
     read: tuple[str, ...] = ()
     write: tuple[str, ...] = ()
+    tags: tuple[str, ...] = ()
 
 
 @dataclass
@@ -73,7 +74,12 @@ ADOPTED = {
     "Voice channels": ("category", "Voice"),
     "moderator-only": ("text", "staff-chat"),
     "General": ("voice", "lounge"),
+    "Minecraft": ("category", "Support"),
 }
+
+# Channels that used to be part of the layout and are not wanted now.
+# They are deleted if they are still there.
+REMOVED = ("whitelist",)
 
 
 # What each role can do. The Owner role is the server owner, so it has
@@ -174,11 +180,25 @@ def category_specs() -> list[CategorySpec]:
             ],
         ),
         CategorySpec(
-            "Minecraft",
+            "Support",
             [
                 ChannelSpec("help", "text", "Questions about the modpack and the server.", read=everyone, write=everyone),
-                ChannelSpec("whitelist", "text", "Applying for the whitelist, and whitelist problems.", read=everyone, write=everyone),
-                ChannelSpec("bugs", "text", "Something broken? Report it here.", read=everyone, write=everyone),
+                ChannelSpec(
+                    "bugs",
+                    "forum",
+                    "Something broken? Report it here.",
+                    read=everyone,
+                    write=everyone,
+                    tags=("Crash", "Graphics", "Gameplay", "Other"),
+                ),
+                ChannelSpec(
+                    "suggestions",
+                    "forum",
+                    "Ideas for the server, the pack and the Discord.",
+                    read=everyone,
+                    write=everyone,
+                    tags=("Mods", "Builds", "Server", "Other"),
+                ),
             ],
         ),
         CategorySpec(
@@ -199,18 +219,23 @@ def category_specs() -> list[CategorySpec]:
     ]
 
 
-RULES = """**HoneyBeeSMP rules**
+RULES = """**HoneyBeeSMP Discord rules**
+
+These are the rules for the Discord. The rules for the Minecraft server
+itself are on the website: https://honeybeesmp.co.uk
 
 1. Be kind. No harassment, no slurs, no bullying.
-2. Griefing and stealing other people's builds is not allowed.
-3. Do not use unfair mods, exploits, or automation. X-ray and fly in survival are cheating.
-4. Keep chat in English and on topic.
-5. One account per player. Do not share accounts or buy them.
-6. Staff decisions are final. Do not argue with them in public - use a staff channel.
-7. Advertising other servers is not allowed.
-8. Use `#minecraft-bugs` for bugs, and `#minecraft-help` for questions.
-
-Moderators can mute, timeout, kick, or ban. Bans are for repeat or serious offences.
+2. Keep chat in English, and keep it on topic.
+3. No spam, no advertising, no scams, and no unsolicited DMs.
+4. Keep anything adult or gory out of the channels that are not for it.
+5. Put spoilers for anything recent in the channel for it, not in general.
+6. Use the right channel: questions in `#help`, bugs in `#bugs`, and ideas
+   in `#suggestions`.
+7. Do not pick fights with the staff in public. If you want to raise
+   something, ask a moderator for a private channel.
+8. Staff decisions are final.
+9. Staff can mute, timeout, kick or ban. Bans are for repeat or serious
+   offences.
 """
 
 
@@ -360,20 +385,75 @@ def _same_overwrites(
     return all(current_by_id[key] == wanted_by_id[key] for key in wanted_by_id)
 
 
-async def _post_rules(guild: discord.Guild) -> None:
-    """Put the rules in the rules channel, if they are not there already."""
-    channel = find_channel(guild, "rules")
+SERVER_INFO = """**How to play on HoneyBeeSMP**
+
+- **Server address:** `play.honeybeesmp.co.uk` (port `25566`)
+- **Website:** https://honeybeesmp.co.uk
+
+**Getting the modpack**
+
+The server runs a modpack, so you need it installed before you join:
+
+1. Install [Prism Launcher](https://prismlauncher.org) or the
+   [Modrinth App](https://modrinth.com/app).
+2. Point it at the HoneyBeeSMP server on Modrinth and install it.
+3. Launch the profile it creates and connect.
+
+The launcher keeps the pack up to date for you.
+
+**In game**
+
+The server is Create and automation focused, with a custom world, claims
+and parties, and proximity voice chat.
+"""
+
+
+async def _post(channel: discord.abc.GuildChannel | None, text: str, label: str) -> None:
+    """Put a message in a channel, or update the one that is already there."""
     if not isinstance(channel, discord.TextChannel):
         return
     try:
         messages = [m async for m in channel.history(limit=50)]
     except discord.HTTPException as exc:
-        log.warning("could not read the rules channel: %s", exc)
+        log.warning("could not read the %s channel: %s", label, exc)
         return
-    if any(m.author.id == guild.me.id for m in messages):
-        return
-    await channel.send(RULES)
-    log.info("posted the rules")
+    for message in messages:
+        if message.author.id == channel.guild.me.id:
+            if message.content != text:
+                await message.edit(content=text)
+                log.info("updated the %s", label)
+            return
+    await channel.send(text)
+    log.info("posted the %s", label)
+
+
+async def _post_rules(guild: discord.Guild) -> None:
+    """Put the rules in the rules channel."""
+    await _post(find_channel(guild, "rules"), RULES, "rules")
+
+
+async def _post_server_info(guild: discord.Guild) -> None:
+    """Put the joining instructions in the server-info channel."""
+    await _post(find_channel(guild, "server-info"), SERVER_INFO, "server info")
+
+
+async def _remove_channels(guild: discord.Guild) -> None:
+    """Delete the channels that are not part of the layout any more."""
+    for name in REMOVED:
+        channel = find_channel(guild, name)
+        if channel is None:
+            continue
+        log.info("removing the channel #%s", name)
+        await channel.delete(reason="HoneyBeeSMP server setup")
+
+
+def _kind_matches(channel: discord.abc.GuildChannel, kind: str) -> bool:
+    """Whether the channel is the kind the layout wants."""
+    if kind == "voice":
+        return isinstance(channel, discord.VoiceChannel)
+    if kind == "forum":
+        return isinstance(channel, discord.ForumChannel)
+    return isinstance(channel, discord.TextChannel)
 
 
 async def apply_setup(guild: discord.Guild) -> dict[str, discord.Role]:
@@ -421,6 +501,15 @@ async def apply_setup(guild: discord.Guild) -> dict[str, discord.Role]:
             )
             existing = find_channel(guild, channel_spec.name)
 
+            if existing is not None and not _kind_matches(existing, channel_spec.kind):
+                # Discord cannot turn a channel into a different kind of
+                # channel, so it has to be made again.
+                log.info(
+                    "replacing the %s channel %s", existing.type, channel_spec.name
+                )
+                await existing.delete(reason="HoneyBeeSMP server setup")
+                existing = None
+
             if existing is None:
                 log.info("creating %s channel %s", channel_spec.kind, channel_spec.name)
                 if channel_spec.kind == "voice":
@@ -428,6 +517,17 @@ async def apply_setup(guild: discord.Guild) -> dict[str, discord.Role]:
                         channel_spec.name,
                         category=category,
                         overwrites=overwrites,
+                        reason="HoneyBeeSMP server setup",
+                    )
+                elif channel_spec.kind == "forum":
+                    await guild.create_forum(
+                        channel_spec.name,
+                        topic=channel_spec.topic,
+                        category=category,
+                        overwrites=overwrites,
+                        available_tags=[
+                            discord.ForumTag(name=tag) for tag in channel_spec.tags
+                        ],
                         reason="HoneyBeeSMP server setup",
                     )
                 else:
@@ -451,13 +551,15 @@ async def apply_setup(guild: discord.Guild) -> dict[str, discord.Role]:
                     overwrites=overwrites, reason="HoneyBeeSMP server setup"
                 )
             if (
-                isinstance(existing, discord.TextChannel)
+                isinstance(existing, (discord.TextChannel, discord.ForumChannel))
                 and existing.topic != channel_spec.topic
             ):
                 await existing.edit(
                     topic=channel_spec.topic, reason="HoneyBeeSMP server setup"
                 )
 
+    await _remove_channels(guild)
     await _post_rules(guild)
+    await _post_server_info(guild)
 
     return roles

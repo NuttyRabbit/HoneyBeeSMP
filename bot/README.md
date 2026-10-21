@@ -23,9 +23,12 @@ credentials are needed for it.
 
     Information   rules, announcements, server-info
     Community     general, media, builds
-    Minecraft     help, whitelist, bugs
+    Support       help, bugs, suggestions
     Staff         staff-chat, logs
     Voice         lounge, gaming, afk
+
+`bugs` and `suggestions` are forum channels, so each report or idea is a
+post of its own.
 
 And these roles, from the top down:
 

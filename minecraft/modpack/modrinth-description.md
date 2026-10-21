@@ -73,9 +73,6 @@ possible.
 
 ## Notes
 
-- The server world is **superflat**. It is a clean canvas for testing
-  builds and mechanics, and it generates instantly, so you are not waiting
-  on terrain.
 - A few mods in this pack are server-only. You do not need to install
   anything extra - the launcher works out which files belong on your
   machine from the pack itself.

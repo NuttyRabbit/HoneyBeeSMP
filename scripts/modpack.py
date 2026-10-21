@@ -247,6 +247,10 @@ def cmd_add(args) -> int:
     added = 0
     queue = list(args.slug)
     seen = set()
+    # Only the mods that were asked for by name are forced to be
+    # server-only. A dependency pulled in behind one of them might well be
+    # wanted on the client too.
+    explicit = set(args.slug)
 
     while queue:
         slug = queue.pop(0)
@@ -256,6 +260,11 @@ def cmd_add(args) -> int:
 
         project, version = find_version(slug, game, loader_name, loader_version)
         entry = entry_from_version(project, version)
+        if args.server_only and slug in explicit:
+            # Modrinth's metadata says this mod is fine on a client, but
+            # it is really a server tool - Chunky pre-generates the world,
+            # and there is nothing for a player to do with it.
+            entry["env"]["client"] = "unsupported"
         title = project.get("title", slug)
 
         if entry["path"] in known:
@@ -516,6 +525,12 @@ def main() -> int:
     p = sub.add_parser("add", help="add a mod to the pack")
     p.add_argument("slug", nargs="+", help="Modrinth project slug or id")
     p.add_argument("--env", default="dev", help="environment to resolve for (default: dev)")
+    p.add_argument(
+        "--server-only",
+        action="store_true",
+        help="mark the named mods as server-only, even if Modrinth says "
+        "they are fine on a client (dependencies are left alone)",
+    )
     p.set_defaults(func=cmd_add)
 
     p = sub.add_parser("list", help="show what is in the pack")

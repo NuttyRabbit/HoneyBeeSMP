@@ -57,6 +57,7 @@ LEVEL_TYPE=""
 GENERATOR_SETTINGS=""
 GENERATE_STRUCTURES=""
 WHITELIST=""
+MAX_PLAYERS=""
 while IFS='=' read -r key value; do
 	case "$key" in
 	"") continue ;;
@@ -69,6 +70,7 @@ while IFS='=' read -r key value; do
 	GENERATOR_SETTINGS) GENERATOR_SETTINGS=$value ;;
 	GENERATE_STRUCTURES) GENERATE_STRUCTURES=$value ;;
 	WHITELIST) WHITELIST=$value ;;
+	MAX_PLAYERS) MAX_PLAYERS=$value ;;
 	esac
 done < "$ENV_FILE"
 
@@ -103,6 +105,16 @@ true | false) ;;
 	;;
 esac
 
+# The player limit, too. A missing or nonsensical value here would be
+# rendered straight into server.properties, so it is checked rather than
+# trusted.
+case "$MAX_PLAYERS" in
+'' | *[!0-9]*)
+	echo "env.conf for '$ENV' has MAX_PLAYERS='$MAX_PLAYERS'; it must be a number" >&2
+	exit 1
+	;;
+esac
+
 TARGET="$SERVERS_DIR/$SERVER_ID"
 if [ ! -d "$TARGET" ]; then
 	echo "server directory not found: $TARGET" >&2
@@ -132,6 +144,7 @@ LEVEL_TYPE="$LEVEL_TYPE" \
 GENERATOR_SETTINGS="$GENERATOR_SETTINGS" \
 GENERATE_STRUCTURES="$GENERATE_STRUCTURES" \
 WHITELIST="$WHITELIST" \
+MAX_PLAYERS="$MAX_PLAYERS" \
 python3 - "$MC_SRC/server.properties" "$RENDERED" <<'PY'
 import os
 import sys
@@ -144,6 +157,7 @@ values = {
     "@GENERATOR_SETTINGS@": os.environ["GENERATOR_SETTINGS"],
     "@GENERATE_STRUCTURES@": os.environ["GENERATE_STRUCTURES"],
     "@WHITELIST@": os.environ["WHITELIST"],
+    "@MAX_PLAYERS@": os.environ["MAX_PLAYERS"],
 }
 
 with open(src, encoding="utf-8") as fh:

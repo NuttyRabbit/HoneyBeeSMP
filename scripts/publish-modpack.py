@@ -148,16 +148,18 @@ def server_address() -> str:
 
 
 def max_players() -> int:
-    """The player limit, from the server.properties template."""
-    path = os.path.join(MC_DIR, "server.properties")
+    """The player limit, from the live environment's config.
+
+    The server.properties template has a placeholder in it, so the number
+    lives in the live environment's config - the same place the server
+    reads it from. Reading it there means the listing cannot claim a
+    different number to the one the server enforces.
+    """
+    raw = read_env_conf("live").get("MAX_PLAYERS", "")
     try:
-        with open(path, encoding="utf-8") as fh:
-            for line in fh:
-                if line.startswith("max-players="):
-                    return int(line.split("=", 1)[1].strip())
-    except (OSError, ValueError):
-        pass
-    return 20
+        return int(raw)
+    except ValueError:
+        die(f"the live environment config has MAX_PLAYERS='{raw}'")
 
 
 def read_description() -> tuple:

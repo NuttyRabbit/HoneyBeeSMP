@@ -1,9 +1,9 @@
 -XX:+UnlockExperimentalVMOptions
--Xms2G
--Xmx4G
+-Xms1G
+-Xmx2G
 -XX:+UseG1GC
 -XX:MaxGCPauseMillis=60
--XX:G1HeapRegionSize=2M
+-XX:G1HeapRegionSize=1M
 -XX:G1ReservePercent=20
 -XX:InitiatingHeapOccupancyPercent=25
 -XX:G1NewSizePercent=30

@@ -7,16 +7,21 @@
   <meta name="description" content="HoneyBeeSMP - a Minecraft community server. Download the modpack to get playing.">
   <style>
     :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
     body {
-      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      margin: 0; min-height: 100vh;
       font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
       background: radial-gradient(circle at 50% 0%, #2a1e00 0%, #0d0a05 55%, #060504 100%);
+      background-attachment: fixed;
       color: #f5e6b8;
+      line-height: 1.65;
     }
-    main { text-align: center; padding: 2rem; max-width: 34rem; }
-    h1 { font-size: clamp(2.5rem, 8vw, 5rem); margin: 0 0 .5rem; letter-spacing: .04em; }
+    main { max-width: 46rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+    h1 { font-size: clamp(2.5rem, 8vw, 5rem); margin: 0 0 .5rem; letter-spacing: .04em; text-align: center; }
     h1 span { color: #ffc107; }
-    p { color: #c9b98a; font-size: 1.15rem; margin: .5rem 0 2rem; }
+    p { color: #c9b98a; font-size: 1.05rem; margin: .5rem 0 1.5rem; }
+    .tagline { text-align: center; font-size: 1.15rem; margin-bottom: 2rem; }
+
     .actions { display: flex; flex-wrap: wrap; gap: .8rem; justify-content: center; }
     a.btn {
       display: inline-block; padding: .9rem 1.8rem; border-radius: 999px;
@@ -30,25 +35,59 @@
       border: 1px solid rgba(255,193,7,.45);
     }
     a.btn.alt:hover { background: rgba(255,193,7,.1); }
-    .note { color: #8a7c62; font-size: .9rem; margin: 1.6rem 0 0; }
-    .note code { color: #c9b98a; }
+
     ul.steps {
       text-align: left; color: #c9b98a; line-height: 1.7;
       margin: 2rem auto 0; max-width: 26rem; padding-left: 1.2rem;
     }
     ul.steps li { margin: .3rem 0; }
     ul.steps strong { color: #f5e6b8; }
-    footer { position: fixed; bottom: 1rem; width: 100%; text-align: center; color: #6f6350; font-size: .85rem; }
+
+    .note { color: #8a7c62; font-size: .9rem; margin: 1.6rem 0 0; text-align: center; }
+    .note code { color: #c9b98a; }
+
+    /* --- rules --------------------------------------------------------- */
+    .rules { margin-top: 4rem; border-top: 1px solid rgba(255,193,7,.2); padding-top: 2rem; }
+    .rules > h2 {
+      color: #ffc107; font-size: 1.6rem; margin: 0 0 .3rem;
+      letter-spacing: .02em;
+    }
+    .rules > .intro { color: #8a7c62; font-size: .95rem; margin: 0 0 2rem; }
+    .rules h3 {
+      color: #f5e6b8; font-size: 1.15rem; margin: 2.2rem 0 .4rem;
+      display: flex; align-items: baseline; gap: .6rem;
+    }
+    .rules h3::before {
+      content: ""; width: .45rem; height: .45rem; border-radius: 50%;
+      background: #ffc107; flex: none; transform: translateY(-2px);
+    }
+    .rules ol { margin: 0; padding-left: 1.4rem; color: #c9b98a; }
+    .rules ol li { margin: .55rem 0; }
+    .rules ol li strong { color: #f5e6b8; }
+    .rules code {
+      background: rgba(255,193,7,.09); color: #f5e6b8;
+      padding: .05rem .35rem; border-radius: .25rem; font-size: .9em;
+    }
+    .rules .aside {
+      margin: 1.5rem 0 0; padding: .9rem 1.1rem;
+      border-left: 3px solid rgba(255,193,7,.5);
+      background: rgba(255,193,7,.05); border-radius: 0 .4rem .4rem 0;
+      color: #b7a87c; font-size: .93rem;
+    }
+    .rules .aside strong { color: #f5e6b8; }
+
+    footer { text-align: center; color: #6f6350; font-size: .85rem; padding: 2rem 1rem 3rem; }
+    footer a { color: #a08d5f; }
   </style>
 </head>
 <body>
   <main>
     <h1>Honey<span>Bee</span>SMP</h1>
-    <p>Our Minecraft community is buzzing. Grab the modpack and join us.</p>
+    <p class="tagline">Our Minecraft community is buzzing. Grab the modpack and join us.</p>
 
     <div class="actions">
       <a class="btn" href="https://modrinth.com/server/honeybeesmp">Play on Modrinth</a>
-      <a class="btn alt" href="https://panel.honeybeesmp.co.uk">Panel Login</a>
+      <a class="btn alt" href="https://discord.gg/TsBmAGPtMG">Join our Discord</a>
     </div>
 
     <ul class="steps">
@@ -63,7 +102,73 @@
       you need &mdash; and tells your launcher when we change them, so you
       are always on the same mods as everyone else.
     </p>
+
+    <section class="rules" id="rules">
+      <h2>Server rules</h2>
+      <p class="intro">
+        These are the rules for playing on the server. The rules for the
+        Discord are in <code>#rules</code> over there.
+      </p>
+
+      <h3>Building and land</h3>
+      <ol>
+        <li><strong>Claim what you build on.</strong> The server uses Open Parties and Claims, so nothing of yours can be touched once you have claimed it. Right-click a block to claim, and you get <strong>400 chunks</strong> &mdash; about 5,000 blocks square, which is a big Create base.</li>
+        <li><strong>You have to be near the land to claim it.</strong> You cannot reach across the map and claim somebody's field. Stay within <strong>5 blocks</strong> of what you are claiming.</li>
+        <li><strong>One claim command covers 121 chunks</strong> (11&times;11). To go bigger, use claiming anchors: you get <strong>3</strong>, and each one reaches <strong>16 blocks</strong> further.</li>
+        <li><strong>Forceload at most 12 chunks.</strong> This is the limit that keeps the server running smoothly, and it is the one we enforce hardest. A sorting array needs about six. Forceloading more than your limit is the most common cause of the server lagging for everyone.</li>
+        <li><strong>Claims last a year.</strong> After that the land can be claimed by whoever is standing on it, so come back to it now and then.</li>
+        <li><strong>Parties share a claim.</strong> Up to <strong>8 members</strong> and <strong>8 allies</strong>, and you can have <strong>5 invites</strong> out at a time. Every extra member in the party adds <strong>100 chunks</strong> to the shared claim.</li>
+        <li><strong>Use groups for finer control.</strong> Inside a claim you can set up <strong>5 groups</strong> with <strong>64 spaces</strong> each, so you can give some people your storage and keep other areas to yourself.</li>
+        <li><strong>Do not grief.</strong> Breaking blocks, placing blocks, opening chests, or touching somebody else's machines inside their claim is bannable.</li>
+      </ol>
+
+      <h3>Factories and performance</h3>
+      <ol>
+        <li><strong>Do not forceload more than your limit.</strong> A factory that is too big for the chunks it loads will slow the whole server down, and it will be your build that gets rolled back.</li>
+        <li><strong>Build big machines away from spawn.</strong> Big Cannons, Create additions and anything that runs constantly should not be within a few hundred blocks of spawn.</li>
+        <li><strong>Turn off machines you are not using.</strong> A sorting array with no inputs still ticks. Use the lever or the Create gauge to stop it when you are done.</li>
+        <li><strong>If the server is lagging, check your own base first.</strong> It is almost always an over-forceloaded factory. We have <strong>Spark</strong> on the server, and staff can profile it for you.</li>
+        <li><strong>Do not build lag machines.</strong> Constant redstone, machine spam and chunk loaders beyond your limit are all grounds for a removal.</li>
+      </ol>
+
+      <h3>Items, storage and trading</h3>
+      <ol>
+        <li><strong>Do not duplicate items.</strong> Not with any duplication glitch, and not with storage that lets you hold more of something than the machine that made it. This includes Sophisticated Storage and Backpacks, and Create Compression. Duplicated items are removed, and the people who take them are removed with them.</li>
+        <li><strong>Do not exploit bugs.</strong> If you find a dupe, a money glitch or something broken, tell us in <code>#bugs</code> and do not profit from it. Reporting it is worth more to you than using it.</li>
+        <li><strong>Numismatics is the server's currency.</strong> Trading with other players is fine and encouraged. Scamming, chargebacks and exploiting the currency are not.</li>
+        <li><strong>Do not hoard to the point of breaking the economy.</strong> If you are sitting on a mountain of an item that other people need, that is a conversation with the staff, not a ban.</li>
+        <li><strong>Waystones and trains are for getting around.</strong> Use them freely on your own land. Do not use them to reach somebody else's build, and do not build a waystone network inside a claim that is not yours.</li>
+      </ol>
+
+      <h3>Playing fair</h3>
+      <ol>
+        <li><strong>No x-ray or ore ESP.</strong> AntiXray is on to protect everyone's underground builds. Even a texture pack that shows ores through stone is cheating.</li>
+        <li><strong>No hacks, macros or automation.</strong> Auto-clickers, reach hacks, combat bots, flying, and anything that plays the game for you are all cheating. Flight is not enabled on the server at all.</li>
+        <li><strong>No exploiting the mods.</strong> Create, Numismatics and the rest of the pack are here to build with. Using them to make an unfair advantage is cheating, not clever.</li>
+        <li><strong>One account each.</strong> Do not share accounts, buy accounts, or use alts to get around a ban.</li>
+        <li><strong>Real accounts only.</strong> The server is in online mode, so cracked clients will not connect.</li>
+        <li><strong>PvP is off.</strong> The server is for building, not fighting. There is no way to hurt another player, and trying to work around that is a ban.</li>
+      </ol>
+
+      <h3>Chat and voice</h3>
+      <ol>
+        <li><strong>Be decent to each other.</strong> No harassment, no slurs, no bullying, and no arguing in chat.</li>
+        <li><strong>Keep it in English and on topic.</strong> No spam, no advertising other servers, and no unsolicited messages to people you have not met.</li>
+        <li><strong>Look after other people's information.</strong> Do not post private messages, phone numbers, addresses or anything else that is not yours to share.</li>
+        <li><strong>Use the right channel.</strong> Questions go in <code>#help</code>, bugs in <code>#bugs</code>, ideas in <code>#suggestions</code>. In game, keep factory talk out of general chat.</li>
+        <li><strong>Voice chat is proximity based.</strong> Keep it civil and keep it suitable for everyone. There is voice chat in game and in the Discord, and both follow the same rules.</li>
+        <li><strong>NoChatReports is installed</strong>, so chat is not reported to Mojang. That means we rely on players telling us when something is wrong, so please do.</li>
+      </ol>
+
+      <p class="aside">
+        <strong>Getting something wrong happens.</strong> If you break a rule by accident, say so and we will sort it out. Bans are for repeat offences and for the serious stuff, and staff can lift them. If you think a rule here is wrong, or you want it changed, post it in
+        <code>#suggestions</code> &mdash; this page is meant to be argued with.
+      </p>
+    </section>
   </main>
-  <footer>&copy; 2026 HoneyBeeSMP</footer>
+  <footer>
+    &copy; 2026 HoneyBeeSMP &middot; <a href="https://discord.gg/TsBmAGPtMG">Discord</a> &middot;
+    <a href="https://modrinth.com/server/honeybeesmp">Modrinth</a>
+  </footer>
 </body>
 </html>

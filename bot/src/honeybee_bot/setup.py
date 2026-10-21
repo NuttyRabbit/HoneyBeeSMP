@@ -222,7 +222,7 @@ def category_specs() -> list[CategorySpec]:
 RULES = """**HoneyBeeSMP Discord rules**
 
 These are the rules for the Discord. The rules for the Minecraft server
-itself are on the website: https://honeybeesmp.co.uk
+itself are on the website: https://honeybeesmp.co.uk/#rules
 
 1. Be kind. No harassment, no slurs, no bullying.
 2. Keep chat in English, and keep it on topic.
@@ -389,6 +389,8 @@ SERVER_INFO = """**How to play on HoneyBeeSMP**
 
 - **Server address:** `play.honeybeesmp.co.uk` (port `25566`)
 - **Website:** https://honeybeesmp.co.uk
+- **Discord:** https://discord.gg/TsBmAGPtMG
+- **Server rules:** https://honeybeesmp.co.uk/#rules
 
 **Getting the modpack**
 

@@ -346,16 +346,18 @@ it keeps working if Actions is disabled, misconfigured, or out of minutes.
 Both take the same lock, so whichever gets there first does the work and the
 other finds nothing to do. They cannot race over the working copy's branch.
 
-The workflow needs these repository secrets (Settings -> Secrets and
+The workflow needs **two** repository secrets (Settings -> Secrets and
 variables -> Actions):
 
 | Secret | Value |
 |---|---|
 | `DEPLOY_SSH_KEY` | the private key (see below) |
-| `DEPLOY_HOST` | `132.145.16.69` |
-| `DEPLOY_USER` | `ubuntu` |
-| `DEPLOY_REPO_PATH` | `/home/ubuntu/honeybeesmp` |
 | `DEPLOY_SSH_KNOWN_HOSTS` | the server's host key (optional but recommended) |
+
+The server address, user and repo path are written into the workflow
+itself. They are not secret - the address is in public DNS - and keeping
+them out of the secret store means they cannot be pasted with a stray
+character, and they appear in the log so any mistake is obvious.
 
 To create the key pair and authorise it on the server:
 

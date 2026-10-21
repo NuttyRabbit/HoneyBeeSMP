@@ -26,7 +26,7 @@ LIVE_SERVER := 119045e1-1fac-41a0-83c0-5e2d85ce4c78
 .PHONY: help deploy deploy-web deploy-bot deploy-dev deploy-dev-web deploy-dev-bot \
         deploy-mc deploy-mc-dev status check pull log \
         crafty-up crafty-down crafty-logs \
-        mc-status mc-status-dev mc-restart mc-restart-dev \
+        mc-status mc-status-dev mc-restart mc-restart-dev mc-cmd \
         backup backup-log update update-dev \
         modpack modpack-add modpack-publish modpack-bump modpack-status modpack-verify \
         whitelist
@@ -105,6 +105,10 @@ mc-restart: ## Restart the live Minecraft server (kicks players)
 
 mc-restart-dev: ## Restart the dev Minecraft server
 	@sh "$(REPO_DIR)/scripts/crafty.sh" restart $(DEV_SERVER)
+
+mc-cmd: ## Send a console command: make mc-cmd CMD="chunky progress" [SERVER=id]
+	@test -n "$(CMD)" || { echo "usage: make mc-cmd CMD=\"<console command>\""; exit 2; }
+	@sh "$(REPO_DIR)/scripts/crafty.sh" cmd $(or $(SERVER),$(LIVE_SERVER)) "$(CMD)"
 
 # --- Crafty panel -----------------------------------------------------------
 

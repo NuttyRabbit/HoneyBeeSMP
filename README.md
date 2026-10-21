@@ -510,6 +510,7 @@ make mc-status         # is live running?
 make mc-status-dev     # is dev running?
 make mc-restart        # restart live (kicks players)
 make mc-restart-dev    # restart dev
+make mc-cmd SERVER_ID "chunky progress"   # send a console command
 
 # modpack
 make modpack           # what is in the pack

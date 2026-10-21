@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "game": "minecraft",
-  "versionId": "1.0.2",
+  "versionId": "1.0.3",
   "name": "HoneyBeeSMP",
   "summary": "The mods and configs for the HoneyBeeSMP Minecraft server.",
   "files": [
@@ -484,21 +484,6 @@
         "https://cdn.modrinth.com/data/xcparckV/versions/6AhVNkOg/opacpvp-neoforge-1.0.1-1.21.1.jar"
       ],
       "fileSize": 8749
-    },
-    {
-      "path": "mods/opac_essentials-2.3.jar",
-      "hashes": {
-        "sha1": "09fe10e38d1f9af3f14a5d54ff89527fb2ed96cf",
-        "sha512": "1e0f911f0bb018f2780b74422403facec12a5061b97c2276d4174aa8c9c30d01ed6cc4d874561e02b058636c1a71833a98e9e11708f885e610b01d2a47431c77"
-      },
-      "env": {
-        "client": "optional",
-        "server": "required"
-      },
-      "downloads": [
-        "https://cdn.modrinth.com/data/u0lYa0ln/versions/vMdgVil2/opac_essentials-2.3.jar"
-      ],
-      "fileSize": 5097812
     },
     {
       "path": "mods/xaeroworldmap-neoforge-1.21.1-1.47.0.jar",

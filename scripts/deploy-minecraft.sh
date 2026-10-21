@@ -172,8 +172,19 @@ if [ -f "$MANIFEST" ]; then
 		echo "    downloading $name"
 		tmp_jar=$(mktemp)
 		if curl -fsSL "$url" -o "$tmp_jar"; then
+			# Sanity check: a mod jar is a zip, so it must start with "PK".
+			# A failed download can leave an HTML error page, which would
+			# stop the Minecraft server from starting.
+			if ! head -c 2 "$tmp_jar" | grep -q "PK"; then
+				echo "    FAILED to download $name (not a jar file) - skipping" >&2
+				rm -f "$tmp_jar"
+				continue
+			fi
 			sudo mv "$tmp_jar" "$TARGET/mods/$name"
+			# Match the permissions of the other files in the server
+			# directory: owned by the server user, world-readable.
 			sudo chown opc:root "$TARGET/mods/$name" 2>/dev/null || true
+			sudo chmod 644 "$TARGET/mods/$name" 2>/dev/null || true
 		else
 			echo "    FAILED to download $name" >&2
 			rm -f "$tmp_jar"

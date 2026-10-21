@@ -133,6 +133,23 @@ modpack/
 Anything in `client-overrides/` is never sent to the server, and anything
 in `server-overrides/` is never sent to players.
 
+### Server-only settings
+
+Some server-side mods - LuckPerms, Open Parties and Claims - write their
+own config on first run, with every option and a comment explaining it.
+Copying that file into the repo would mean tracking the mod's defaults,
+which go stale on every update.
+
+So the repo holds only the settings we want changed:
+
+```
+minecraft/server-config/openpartiesandclaims-server.toml
+```
+
+`scripts/server-config.py` merges those into the config the mod
+generated, on every deploy. It only replaces keys that are already
+there, and it leaves the rest of the file alone.
+
 ## Working with it
 
 All of this is done through one tool, `scripts/modpack.py`, which is the

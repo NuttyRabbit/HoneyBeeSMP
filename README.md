@@ -339,6 +339,7 @@ minecraft/
 ├── config/                NeoForge settings        -> server's config/
 ├── defaultconfigs/        server-only defaults     -> server's defaultconfigs/
 ├── modpack/               the modpack definition and overrides
+├── server-config/         settings for server-only mods
 └── env/
     ├── dev/env.conf       DEV server port, address, world settings, MC version
     ├── dev/jvm_args.txt   DEV heap size
@@ -355,6 +356,11 @@ Two things to know:
   startup. See [Restart a Minecraft server](#restart-a-minecraft-server).
 - **Never edit the config on the server directly.** The next deploy
   overwrites it. If you must, change it in the repo instead.
+
+`server-config/` is for the mods that write their own config on the
+server, such as LuckPerms and Open Parties and Claims. It holds only the
+settings you want changed; the deploy merges them into the config the mod
+generated, so the mod's own defaults are not tracked here.
 
 ### The whitelist
 

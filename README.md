@@ -213,9 +213,20 @@ using the panel's own signing secret, so no credential needs storing.
 
 ### CI
 
-`.github/workflows/deploy.yml` runs on every push to `main` or `develop`. It
-SSHes into the server and runs `scripts/update.sh`, which pulls, checks and
-deploys.
+There are two paths that do the same thing, so the servers stay in step with
+the repo even if one of them is unavailable.
+
+**GitHub Actions** (`.github/workflows/deploy.yml`) runs on every push to
+`main` or `develop`. It SSHes into the server and runs `scripts/update.sh`.
+This is the fast path - it deploys within seconds and shows a green check on
+the commit.
+
+**A server-side timer** (`scripts/autodeploy.sh`, run every minute by
+systemd) polls GitHub and deploys anything it finds. This is the backstop:
+it keeps working if Actions is disabled, misconfigured, or out of minutes.
+
+Both take the same lock, so whichever gets there first does the work and the
+other finds nothing to do. They cannot race over the working copy's branch.
 
 The workflow needs these repository secrets (Settings -> Secrets and
 variables -> Actions):
@@ -237,6 +248,15 @@ sudo ./scripts/install-ci-key.sh --show-private
 It prints the private key to paste into `DEPLOY_SSH_KEY`, and adds the
 public key to the server's `authorized_keys`. It is safe to run more than
 once.
+
+Watching a deploy:
+
+```sh
+# on the server
+sudo journalctl -u honeybeesmp-autodeploy-dev.service -f   # the backstop
+sudo journalctl -u honeybeesmp-autodeploy-live.service -f
+tail -f ~/honeybeesmp/logs/backup.log                     # backups
+```
 
 ---
 

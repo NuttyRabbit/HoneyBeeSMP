@@ -278,8 +278,15 @@ gone from disk, but a running server keeps the mod loaded until it restarts.
 
 If a mod needs another mod (a library, an API), **list both**. The manifest
 has no notion of dependencies, so anything the mod needs must be on the
-server too, or the server will not start. Look at the mod's page for its
-dependencies and add a line for each.
+server too, or the server will not start. The error names what is missing:
+
+```
+[ERROR] Missing or unsupported mandatory dependencies:
+  Mod ID: 'lithostitched', Requested by: 'terralith', Expected range: '[1.7.7,)', Actual version: '[MISSING]'
+[FATAL] Error during pre-loading phase: Mod terralith requires lithostitched 1.7.7 or above
+```
+
+Add a line for each dependency, in the same way. Some mods have several.
 
 ### Mods are not backed up as source
 

@@ -31,9 +31,27 @@ live) BRANCH=main ;;
 	;;
 esac
 
+# Take the shared deploy lock for the whole operation, not just the
+# update.sh call. Both environments use the same working copy and switch it
+# to different branches, so the fetch/check/checkout/pull must all happen
+# under one lock, or a dev and a live run would interleave and each would
+# deploy the other's branch.
+#
+# The descriptor is closed before update.sh is called, so that the child
+# does not inherit a held lock and block waiting for itself.
+exec 9>&-
+LOCK=/var/lock/honeybeesmp-deploy.lock
+if ! exec 9>"$LOCK" 2>/dev/null; then
+	exec 9>"/tmp/honeybeesmp-deploy.lock"
+fi
+if ! flock -n 9; then
+	echo "another deploy is in progress; skipping"
+	exit 0
+fi
+
 # Fetch quietly; a network blip is not worth failing over.
-git fetch --quiet origin "$BRANCH" 2>/dev/null || {
-	echo "could not fetch origin/$BRANCH; will try again next minute"
+git fetch --quiet origin 2>/dev/null || {
+	echo "could not fetch from origin; will try again next minute"
 	exit 0
 }
 
@@ -61,6 +79,8 @@ fi
 
 echo "==> new commit on $BRANCH: $(git rev-parse --short "$DEPLOYED") -> $(git rev-parse --short "$REMOTE")"
 
-# update.sh takes the deploy lock itself. We must not hold it here, or the
-# child would inherit the held descriptor and block waiting for itself.
-sh "$REPO_ROOT/scripts/update.sh" "$ENV" all
+# update.sh takes the deploy lock itself, unless we tell it we already
+# hold it. We must not hold it across the call, or the child would
+# inherit the held descriptor and block waiting for itself.
+exec 9>&-
+LOCK_HELD=1 sh "$REPO_ROOT/scripts/update.sh" "$ENV" all

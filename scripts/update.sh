@@ -40,16 +40,24 @@ esac
 # deploy checks out "main". If they ran together they would fight over
 # the checkout and could deploy the wrong branch to the wrong server.
 #
-# The descriptor is closed first, so that a caller which already holds
-# this lock (autodeploy.sh) does not deadlock against its own child.
-exec 9>&-
-LOCK=/var/lock/honeybeesmp-deploy.lock
-if ! exec 9>"$LOCK" 2>/dev/null; then
-	exec 9>"/tmp/honeybeesmp-deploy.lock"
-fi
-if ! flock -w 600 9; then
-	echo "timed out waiting for the deploy lock" >&2
-	exit 1
+# The lock is re-entrant. autodeploy.sh already holds it and calls this
+# script as a child; the child inherits the held descriptor, so taking the
+# lock again on a fresh descriptor would block waiting for its own parent.
+# We detect that case and skip taking the lock.
+#
+# How we detect it: the parent passes LOCK_HELD=1 in the environment.
+if [ "${LOCK_HELD:-0}" = "1" ]; then
+	echo "    (deploy lock already held by the caller)"
+else
+	exec 9>&-
+	LOCK=/var/lock/honeybeesmp-deploy.lock
+	if ! exec 9>"$LOCK" 2>/dev/null; then
+		exec 9>"/tmp/honeybeesmp-deploy.lock"
+	fi
+	if ! flock -w 600 9; then
+		echo "timed out waiting for the deploy lock" >&2
+		exit 1
+	fi
 fi
 
 echo "==> branch: $BRANCH  (environment: $ENV)"
@@ -74,7 +82,11 @@ fi
 
 echo "==> pulling from origin"
 before=$(git rev-parse HEAD)
-git pull --ff-only origin "$BRANCH"
+# Pull the remote branch into the *current* branch explicitly. Naming the
+# ref "origin/$BRANCH" and the destination "HEAD" avoids git's ambiguous
+# "Cannot fast-forward to multiple branches" error, which happens when the
+# local branch name also matches a remote-tracking branch.
+git merge --ff-only "origin/$BRANCH"
 after=$(git rev-parse HEAD)
 
 if [ "$before" = "$after" ]; then

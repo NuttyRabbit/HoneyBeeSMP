@@ -10,7 +10,7 @@ clicks play gets exactly this pack installed, and is told when it changes.
 
 ## What is in the pack
 
-50 mods, chosen to be a coherent set rather than the biggest one possible.
+60 mods, chosen to be a coherent set rather than the biggest one possible.
 
 ### Create and factory building
 
@@ -79,6 +79,14 @@ skips them and the server still installs them.
 | Terralith | Better terrain, caves and biomes. |
 | Tectonic | Terrain shaping - mountains and landforms at a scale Terralith does not do. |
 | Lithostitched | Required by Terralith and Tectonic. |
+| YUNG's Better Mineshafts | Large, varied mineshafts under the overworld. |
+| YUNG's Better Caves | Caverns and cave systems worth finding. |
+| YUNG's Better Nether Fortresses | Fortresses that are not all the same shape. |
+| YUNG's Better End Island | A proper central island for the dragon fight. |
+| MVS - Moog's Voyager Structures | Villages, outposts and the rest of the overworld's structures. |
+| MES - Moog's End Structures | The End, filled with things. |
+| Hopo Better Ruined Portals | Ruined portals in every dimension. |
+| Chunky | Pre-generates the world, so it is already there when a player arrives. |
 | Xaero's Minimap | Minimap and waypoints, for exploring. |
 | Xaero's World Map | The world map, to go with it. |
 
@@ -100,7 +108,7 @@ what a player installs - and they can never drift apart.
 The pack also records a SHA-512 hash for every file, so a download that is
 corrupted or tampered with is caught rather than silently installed.
 
-Of the 50 mods, 43 are installed on the server and 46 on players' clients.
+Of the 60 mods, 53 are installed on the server and 47 on players' clients.
 Mods that are on neither, or on both, sit in between - the pack records
 each file's split exactly.
 
@@ -219,7 +227,7 @@ follow:
 
 ### A note on the pack's size
 
-50 mods is a lot, and some of them pull in a fair bit underneath - Create
+60 mods is a lot, and some of them pull in a fair bit underneath - Create
 Ore Excavation needs Sinytra Connector and Forgified Fabric API to run on
 NeoForge, which is how it ships for 1.21.1. If the server starts slowly
 or a mod misbehaves, that pairing is worth looking at first.

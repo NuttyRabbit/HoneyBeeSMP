@@ -93,7 +93,7 @@ and try again.
 
 ## What is in the pack
 
-50 mods, chosen to work well together rather than to be the biggest set
+60 mods, chosen to work well together rather than to be the biggest set
 possible.
 
 ### Create and factory building
@@ -141,8 +141,15 @@ possible.
 
 - **Terralith** - better terrain, caves and biomes
 - **Tectonic** - terrain shaping, at a scale Terralith does not do
-- **Xaero's Minimap** - minimap and waypoints
-- **Xaero's World Map** - the world map, to go with it
+- **YUNG's Better Mineshafts** and **YUNG's Better Caves** - the underground
+  is worth looking at
+- **YUNG's Better Nether Fortresses** and **YUNG's Better End Island** -
+  the other two dimensions, done properly
+- **MVS - Moog's Voyager Structures** and **MES - Moog's End Structures** -
+  villages, outposts, and an End worth flying around
+- **Hopo Better Ruined Portals** - ruined portals in every dimension
+- **Xaero's Minimap** and **Xaero's World Map** - minimap, waypoints and
+  the world map
 
 ### Server side
 

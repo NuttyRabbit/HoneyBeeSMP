@@ -1,93 +1,90 @@
 # HoneyBeeSMP
 
-Monorepo for the HoneyBeeSMP Minecraft community: website, Discord bot, and
-deployment tooling.
+Everything for the HoneyBeeSMP Minecraft server lives in this repo: the
+website, the Discord bot, the Minecraft server configuration, and the
+tooling that deploys them.
 
-**Repo:** https://github.com/NuttyRabbit/HoneyBeeSMP (private)
-**Live site:** https://honeybeesmp.co.uk
-**Dev site:** https://dev.honeybeesmp.co.uk
-**Server panel:** https://panel.honeybeesmp.co.uk
-
----
-
-## Quick start
-
-The repo is cloned at `~/honeybeesmp` on both your laptop and the server.
-
-```sh
-cd ~/honeybeesmp
-git checkout develop     # work on develop, not main
-```
-
-Make a change, then:
-
-```sh
-git add -A
-git commit -m "describe the change"
-git push origin develop
-```
-
-**That is the whole loop.** Pushing to `develop` automatically deploys to the
-dev environment. You can then look at https://dev.honeybeesmp.co.uk and the
-DEV Minecraft server to test it. When it works, merge to `main`:
-
-```sh
-git checkout main
-git merge develop
-git push origin main      # deploys to live
-```
-
-You can also work directly on the server over SSH (`ssh ubuntu@132.145.16.69`,
-repo at `~/honeybeesmp`) — but committing and pushing from your laptop is
-usually easier, and the CI deploy works the same either way.
-
-### What runs where
-
-| | branch | website | Minecraft server |
-|---|---|---|---|
-| dev | `develop` | dev.honeybeesmp.co.uk | DEV, port 25565 |
-| live | `main` | honeybeesmp.co.uk | LIVE, port 25566 |
+| | |
+|---|---|
+| **Live site** | https://honeybeesmp.co.uk |
+| **Dev site** | https://dev.honeybeesmp.co.uk |
+| **Server panel** | https://panel.honeybeesmp.co.uk |
+| **Repo** | https://github.com/NuttyRabbit/HoneyBeeSMP (private) |
+| **Server** | `ssh ubuntu@132.145.16.69` (repo at `~/honeybeesmp`) |
 
 ---
 
-## The idea
+## Contents
 
-This repo is the **single source of truth** for everything we author. The
-server's live directories are populated from here by a deploy script, so there
-is never a question of which copy is authoritative.
-
-```
-website/      -> deployed to /var/www/honeybeesmp.co.uk   (nginx)
-bot/          -> deployed to /opt/honeybee-discord-bot    (runtime dir)
-minecraft/    -> the server's configuration (not the world data)
-scripts/      -> check / deploy / update helpers
-```
-
-Things that are **not** in the repo, on purpose:
-
-| Excluded | Where it lives | Why |
-|---|---|---|
-| Minecraft worlds, jars, mods | `/opt/crafty/servers` | ~189 MB each; backed up to Google Drive, not git |
-| Crafty config + databases | `/opt/crafty/config` | contains the panel admin password & TLS key |
-| Secrets (`.env`) | server only | never commit credentials |
-| Logs, backups, caches | various | no value in version control |
+- [The one rule](#the-one-rule)
+- [Make a change](#make-a-change)
+- [Add a mod](#add-a-mod)
+- [Remove a mod](#remove-a-mod)
+- [Change the Minecraft config](#change-the-minecraft-config)
+- [Change the world type](#change-the-world-type)
+- [Restart a Minecraft server](#restart-a-minecraft-server)
+- [Publish the modpack](#publish-the-modpack)
+- [Backups](#backups)
+- [Commands reference](#commands-reference)
+- [How it fits together](#how-it-fits-together)
+- [Setting up a new machine](#setting-up-a-new-machine)
 
 ---
 
-## Everyday workflow
+## The one rule
 
-Edit files in this repo, then:
+**Work on `develop`. Merge to `main` when it works.**
 
-```sh
-git add -A
-git commit -m "describe the change"
-git push
-```
+| | branch | website | Minecraft | world |
+|---|---|---|---|---|
+| **dev** | `develop` | dev.honeybeesmp.co.uk | port 25565 | superflat |
+| **live** | `main` | honeybeesmp.co.uk | port 25566 | normal |
 
-The CI workflow runs `scripts/check.sh` on every push to confirm no secrets or
-oversized files slipped in, and then deploys.
+A push to `develop` deploys to dev. A push to `main` deploys to live.
+Nothing reaches players until it is on `main`.
 
-### Publishing a change to the live site
+---
+
+## Make a change
+
+1. **Get the code.** On your laptop:
+
+   ```sh
+   git clone git@github.com:NuttyRabbit/HoneyBeeSMP.git ~/honeybeesmp
+   cd ~/honeybeesmp
+   git checkout develop
+   ```
+
+2. **Edit something.** The website is `website/index.html`. The bot is in
+   `bot/`. The Minecraft config is in `minecraft/`.
+
+3. **Commit and push.**
+
+   ```sh
+   git add -A
+   git commit -m "describe the change"
+   git push origin develop
+   ```
+
+4. **Test it.** The deploy runs on its own within a minute. Check
+   https://dev.honeybeesmp.co.uk, or connect to the dev Minecraft server on
+   port 25565.
+
+5. **Promote it to live** once you are happy:
+
+   ```sh
+   git checkout main
+   git merge develop
+   git push origin main
+   ```
+
+   The live site updates within a minute, and the live Minecraft server
+   picks up any config change (see
+   [Restart a Minecraft server](#restart-a-minecraft-server)).
+
+### Deploying by hand
+
+If you need to deploy without pushing:
 
 ```sh
 ./scripts/deploy.sh live              # website, bot and Minecraft config
@@ -96,288 +93,313 @@ oversized files slipped in, and then deploys.
 ./scripts/deploy.sh live minecraft    # Minecraft config only
 ```
 
-`deploy.sh` uses `rsync --delete`, so the live directories end up **exactly**
-matching the repo (minus runtime files like `.env` and `bot/data`).
-
-### Applying an update from GitHub to the server
+The same thing on the server pulls first:
 
 ```sh
 ./scripts/update.sh live   # pull main, check, deploy, reload nginx
-./scripts/update.sh dev    # same, but from the develop branch
-```
-
-This pulls, runs the checks, deploys, and reloads nginx. Safe to automate —
-this is exactly what CI runs.
-
-### Handy shortcuts
-
-```sh
-make help        # list all targets
-make status      # git state, service state, and repo-vs-live drift
-make check       # same checks CI runs
-make deploy      # publish the website to live
-make deploy-dev  # publish the website to dev
-make crafty-logs # tail the Minecraft panel logs
-make backup      # run a backup now
-make backup-log  # show the backup log
+./scripts/update.sh dev    # same, from the develop branch
 ```
 
 ---
 
-## Environments and the dev -> live workflow
+## Add a mod
 
-There are two environments, each with its own branch, website and Minecraft
-server:
+Mods are listed in `minecraft/modpack/modrinth.index.json`. The jar files
+are not in git - the server downloads and verifies them.
 
-| | dev | live |
-|---|---|---|
-| branch | `develop` | `main` |
-| website | https://dev.honeybeesmp.co.uk | https://honeybeesmp.co.uk |
-| Minecraft server | DEV (`d48afa12-...`), port 25565 | LIVE (`119045e1-...`), port 25566 |
-| bot directory | `/opt/honeybee-discord-bot-dev` | `/opt/honeybee-discord-bot` |
+1. **Add it to the pack.** From your laptop:
 
-The normal flow:
+   ```sh
+   python3 scripts/modpack.py add create --env dev
+   ```
 
-1. Make a change, push it to `develop`.
-2. CI deploys `develop` to the dev environment.
-3. Test it on `dev.honeybeesmp.co.uk` and the DEV Minecraft server.
-4. When you are happy, merge `develop` into `main` and push.
-5. CI deploys `main` to the live environment.
+   Use the Modrinth project slug (`create`, `journeymap`, `jei`, ...).
 
-Nothing reaches players until step 4.
+   This picks the right build for Minecraft 1.21.1 / NeoForge, and **pulls in
+   required dependencies automatically**, so you will not hit "requires X or
+   above" on the server.
 
-### Minecraft configuration lives in the repo
+2. **Push it.** The deploy installs it on the dev server.
 
-The *world data* is too big for git and is backed up separately, but the
-*configuration* is version-controlled in `minecraft/`:
+   ```sh
+   git add -A
+   git commit -m "Add Create"
+   git push origin develop
+   ```
 
-```
-minecraft/
-├── server.properties      template; @SERVER_PORT@ is filled in per env
-├── config/                NeoForge server settings
-├── defaultconfigs/
-├── mods/mods.manifest     the mod list (jars are not in git)
-└── env/
-    ├── dev/env.conf       DEV server id and port
-    ├── dev/jvm_args.txt   DEV heap size
-    ├── live/env.conf      LIVE server id and port
-    └── live/jvm_args.txt  LIVE heap size
-```
+3. **Restart the dev server** so it loads the mod:
 
-So changing a setting is an ordinary edit, commit and push. The deploy
-applies it to the target server. It never touches the world, player data or
-the server jars.
+   ```sh
+   make mc-restart-dev
+   ```
 
-### Adding a mod
+4. **Confirm it actually loaded**, rather than assuming:
 
-Mods are listed in `minecraft/mods/mods.manifest`, one per line:
+   ```sh
+   sudo grep -A8 "Mod List" /opt/crafty/servers/d48afa12-59a5-496e-829a-1ced86d108b5/logs/latest.log
+   ```
 
-```
-<the-exact-jar-filename>.jar  <direct-download-url>
-```
+5. **Promote to live** when it works, then restart the live server too
+   (`make mc-restart`).
 
-The jar files themselves are not in git - they are downloaded on the server
-by the deploy.
+### Which mods can go on the server
 
-**1. Find a server-side build.**
-
-This is the step people get wrong. A dedicated server must only run mods
-marked **"Server"** on Modrinth. A client-only mod will crash the server on
-startup, and the failure is cryptic:
+A dedicated server can only run **server-side** mods. A client-only mod
+(Sodium, Xaero's, JourneyMap) will crash the server on startup with a
+confusing error:
 
 ```
 Exception in thread "main" java.lang.NoClassDefFoundError: org/lwjgl/Version
 ```
 
-That is what happens if you install a client-only mod such as Sodium, Xaero's
-or JourneyMap. Check the mod's page - if it says "Client: Required" and
-"Server: Not required", it is a client mod and does not belong here.
+Check the mod's page on Modrinth: if it says "Client: Required", it is a
+client mod and does not belong on the server. `modpack.py add` records the
+client/server split for you, and the deploy only installs the server-side
+ones.
 
-You also need the build that matches:
+### If the server will not start
 
-| | |
-|---|---|
-| Minecraft | 1.21.1 |
-| Mod loader | NeoForge |
-| Loader version | 21.1.264 |
-
-**2. Get the direct download URL and the exact filename.**
-
-Modrinth's API gives both, and avoids the "which of the seven files do I
-want" problem:
-
-```sh
-# list the versions available for our loader and game version
-curl -s "https://api.modrinth.com/v2/project/terralith/version?game_versions=%5B%221.21.1%22%5D&loaders=%5B%22neoforge%22%5D"
-```
-
-Each version has a `files` array; the entry with `"primary": true` is the
-one you want. Note its `filename` - the manifest must match it exactly.
-
-**3. Add the line to the manifest.**
+A missing dependency is the usual cause, and the error names it:
 
 ```
-# minecraft/mods/mods.manifest
-Terralith_1.21.1_v2.6.2_Neoforge.jar  https://cdn.modrinth.com/data/8oi3bsk5/versions/IY93YaEe/Terralith_1.21.1_v2.6.2_Neoforge.jar
-```
-
-The two columns are separated by whitespace. A `#` starts a comment.
-
-**4. Push to `develop` and let it install on the dev server.**
-
-```sh
-git add minecraft/mods/mods.manifest
-git commit -m "Add Terralith"
-git push origin develop
-```
-
-The deploy downloads the jar, checks it really is a jar (and not an HTML
-error page), and installs it. You will see it in the log:
-
-```
-==> reconciling mods
-    downloading Terralith_1.21.1_v2.6.2_Neoforge.jar
-```
-
-**5. Restart the dev server so it loads the mod.**
-
-Mods are read at startup, so the server must be restarted:
-
-```sh
-make mc-restart-dev          # on the server
-```
-
-Then confirm it actually loaded, rather than assuming:
-
-```sh
-sudo grep -A8 "Mod List" /opt/crafty/servers/d48afa12-59a5-496e-829a-1ced86d108b5/logs/latest.log
-```
-
-**6. Test it, then promote to live.**
-
-Once it works on dev, merge to `main` and push. The live server gets the
-same jar. **Restart the live server too** - it is a separate machine state:
-
-```sh
-make mc-restart              # on the server
-```
-
-### Removing a mod
-
-Delete its line from the manifest and push. The next deploy removes the jar
-from the server:
-
-```
-    removing unlisted mod sodium-neoforge-0.8.13+mc1.21.1.jar
-```
-
-**Restart the server afterwards** so it stops loading the mod. The jar is
-gone from disk, but a running server keeps the mod loaded until it restarts.
-
-### Mods and dependencies
-
-If a mod needs another mod (a library, an API), **list both**. The manifest
-has no notion of dependencies, so anything the mod needs must be on the
-server too, or the server will not start. The error names what is missing:
-
-```
-[ERROR] Missing or unsupported mandatory dependencies:
-  Mod ID: 'lithostitched', Requested by: 'terralith', Expected range: '[1.7.7,)', Actual version: '[MISSING]'
 [FATAL] Error during pre-loading phase: Mod terralith requires lithostitched 1.7.7 or above
 ```
 
-Add a line for each dependency, in the same way. Some mods have several.
+`modpack.py add` should have pulled that in automatically. If it did not,
+add the dependency by hand the same way.
 
-### Mods are not backed up as source
+---
 
-The mod jars live on the server and are re-downloaded from the manifest on
-every deploy, so they do not need to be in the backup. If a mod disappears
-from Modrinth, the manifest entry stops working - keep the URL stable, or
-vendor the jar somewhere permanent and point the manifest at that.
+## Remove a mod
 
-### World generation
+1. Delete its entry from `minecraft/modpack/modrinth.index.json`.
+2. Push. The deploy deletes the jar from the server.
+3. **Restart the server** - the jar is gone from disk, but a running server
+   keeps the mod loaded until it restarts.
 
-Each environment has its own world settings, in
-`minecraft/env/<env>/env.conf`:
+---
 
-| | level-type | biome | structures |
-|---|---|---|---|
-| dev | `minecraft:flat` | plains | no |
-| live | `minecraft:normal` | - | yes |
+## Change the Minecraft config
 
-The dev world is **superflat** - bedrock, dirt, dirt, grass. It generates in
-seconds and gives a clean canvas for testing builds and mechanics, without
-villages or terrain in the way.
+The server's settings are in the repo, so changes are reviewed and
+promoted like any other code.
 
-These are substituted into the `minecraft/server.properties` template, so
-changing a world's type is an ordinary commit and push.
+```
+minecraft/
+├── server.properties       the template (one file for both environments)
+├── config/                NeoForge settings        -> server's config/
+├── defaultconfigs/        server-only defaults     -> server's defaultconfigs/
+└── env/
+    ├── dev/env.conf       DEV server id, port, world settings, MC version
+    ├── dev/jvm_args.txt   DEV heap size
+    ├── live/env.conf      LIVE server id, port, world settings, MC version
+    └── live/jvm_args.txt  LIVE heap size
+```
 
-**Important:** `level-type` and `generator-settings` are read only when the
-world directory is first created. Changing them later does nothing to a
-world that already exists - the generator settings live inside the world
-save itself. To apply a change you have to remove the world directory so
-the server generates a fresh one:
+Edit the file, push to `develop`, test, then merge to `main`.
+
+Two things to know:
+
+- **Config changes need a restart.** Minecraft only reads its config at
+  startup. See [Restart a Minecraft server](#restart-a-minecraft-server).
+- **Never edit the config on the server directly.** The next deploy
+  overwrites it. If you must, change it in the repo instead.
+
+### Memory
+
+Heap size per environment, in `minecraft/env/<env>/jvm_args.txt`:
+
+| | min | max |
+|---|---|---|
+| dev | 2G | 4G |
+| live | 4G | 8G |
+
+The host has 24 GB and 8 GB of swap. If you raise the live heap, keep the
+two in step - a spike on live must not be able to OOM-kill dev.
+
+---
+
+## Change the world type
+
+World settings are per-environment in `minecraft/env/<env>/env.conf`:
+
+| | level-type | structures |
+|---|---|---|
+| dev | `minecraft:flat` (superflat) | no |
+| live | `minecraft:normal` | yes |
+
+**Changing this does nothing to a world that already exists.**
+`level-type` and `generator-settings` are read once, when the world is first
+created - the generator settings live inside the world save itself. To apply
+a change you have to delete the world so the server makes a new one:
 
 ```sh
 # on the server, with the server stopped
-sudo rm -rf /opt/crafty/servers/<dev-server-id>/world
+sudo rm -rf /opt/crafty/servers/d48afa12-59a5-496e-829a-1ced86d108b5/world
 make mc-restart-dev
 ```
 
-The live world is never touched this way.
+The old world is not deleted by the deploy, so back it up first if you care
+about it. **Never do this to the live world.**
 
-### Memory allocation
+---
 
-Each environment has its own JVM heap size, in
-`minecraft/env/<env>/jvm_args.txt`:
+## Restart a Minecraft server
 
-| | min | max | G1 region |
-|---|---|---|---|
-| dev | 2G | 4G | 2M |
-| live | 4G | 8G | 4M |
-
-The deploy applies these, so the allocation is reviewable and reproducible
-rather than being set once in the panel and forgotten. A change takes effect
-on the next restart.
-
-The host has 24 GB and 8 GB of swap (`/swapfile`, persistent via `fstab`,
-`vm.swappiness=10`). Both servers running together use around 7 GB of heap
-and leave plenty of headroom. If you raise the live heap, keep the two
-allocations in step — a spike on the live server must not be able to
-OOM-kill the dev one, or vice versa.
-
-### Restarting a Minecraft server
-
-Minecraft only reads its config at startup, so a config change needs a
-restart to take effect. Restarting kicks players, so it is opt-in:
+Minecraft reads its config at startup, so a config change needs a restart.
+Restarting kicks players, so it is opt-in.
 
 ```sh
-./scripts/deploy.sh live minecraft --restart
+make mc-restart-dev    # dev server
+make mc-restart        # live server
+make mc-status-dev     # is it running?
+make mc-status         # is it running?
+```
+
+Or, with the panel API directly:
+
+```sh
 ./scripts/crafty.sh status  119045e1-1fac-41a0-83c0-5e2d85ce4c78
 ./scripts/crafty.sh restart 119045e1-1fac-41a0-83c0-5e2d85ce4c78
 ```
 
-`crafty.sh` wraps the Crafty Controller's API. It mints a short-lived token
-using the panel's own signing secret, so no credential needs storing.
+You can also restart as part of a deploy:
 
-### CI
+```sh
+./scripts/deploy.sh live minecraft --restart
+```
 
-There are two paths that do the same thing, so the servers stay in step with
-the repo even if one of them is unavailable.
+---
 
-**GitHub Actions** (`.github/workflows/deploy.yml`) runs on every push to
-`main` or `develop`. It SSHes into the server and runs `scripts/update.sh`.
-This is the fast path - it deploys within seconds and shows a green check on
-the commit.
+## Publish the modpack
 
-**A server-side timer** (`scripts/autodeploy.sh`, run every minute by
-systemd) polls GitHub and deploys anything it finds. This is the backstop:
-it keeps working if Actions is disabled, misconfigured, or out of minutes.
+Players install the pack from
+[Modrinth](https://modrinth.com/modpack/honeybeesmp), and their launcher
+offers them updates when you publish a new version. Nobody has to
+re-download anything by hand.
 
-Both take the same lock, so whichever gets there first does the work and the
-other finds nothing to do. They cannot race over the working copy's branch.
+The live deploy publishes automatically. To publish by hand:
 
-The workflow needs **two** repository secrets (Settings -> Secrets and
+```sh
+make modpack-publish    # bumps the version, then publishes
+make modpack-status     # what is published right now
+make modpack            # what is in the pack
+```
+
+Modrinth rejects a version number it has seen before, so the version is
+bumped first.
+
+**The project is a draft.** Until it is approved for review it is not
+visible to players:
+
+```
+https://modrinth.com/project/EAHVT4s6/settings
+```
+
+The API token lives on the server at `~/.config/modrinth/token` and needs
+the **Create projects**, **Create versions** and **Modify projects**
+scopes. `python3 scripts/publish-modpack.py check` reports what the token
+actually has.
+
+---
+
+## Backups
+
+The live world is backed up to Google Drive twice a day, as a single zip
+per run.
+
+```sh
+make backup        # run one now
+make backup-log    # show the log
+```
+
+To restore, download `latest.zip` from the `HoneyBeeSMP` folder in Drive,
+unzip it, and copy the parts you need back with the server stopped.
+
+The backup covers the **live** world only. The dev world is disposable by
+design.
+
+---
+
+## Commands reference
+
+Run these on the server unless it says otherwise.
+
+```sh
+make help              # list every target
+
+# deploy
+make deploy            # website to live
+make deploy-dev        # website to dev
+make deploy-mc         # Minecraft config to live
+make deploy-mc-dev     # Minecraft config to dev
+make update            # pull main, check, deploy
+make update-dev        # pull develop, check, deploy
+
+# Minecraft servers
+make mc-status         # is live running?
+make mc-status-dev     # is dev running?
+make mc-restart        # restart live (kicks players)
+make mc-restart-dev    # restart dev
+
+# modpack
+make modpack           # what is in the pack
+make modpack-add SLUG=create
+make modpack-publish   # bump and publish to Modrinth
+make modpack-status    # what is published
+make modpack-verify    # do the server's mods match the pack?
+
+# housekeeping
+make status            # git, services, and repo-vs-live drift
+make check             # the same checks CI runs
+make backup            # back up to Drive
+make backup-log        # backup log
+make crafty-logs       # tail the panel logs
+```
+
+The Crafty panel database holds the panel admin password, so treat the
+server as sensitive.
+
+---
+
+## How it fits together
+
+The repo is the **single source of truth**. The server's live directories are
+populated from here, so there is never a question of which copy is
+authoritative.
+
+```
+website/     ->  /var/www/honeybeesmp.co.uk     (nginx)
+bot/         ->  /opt/honeybee-discord-bot      (runtime dir)
+minecraft/   ->  the server's configuration
+```
+
+Things deliberately **not** in git:
+
+| Excluded | Where it lives | Why |
+|---|---|---|
+| Minecraft worlds and jars | `/opt/crafty/servers` | ~190 MB; backed up to Drive, not git |
+| Crafty config and databases | `/opt/crafty/config` | panel admin password and TLS keys |
+| Secrets (`.env`) | server only | never commit credentials |
+| Logs and caches | various | no value in version control |
+
+### Who deploys
+
+Two paths do the same job, so the servers stay in step with the repo even
+if one is unavailable.
+
+**GitHub Actions** (`.github/workflows/deploy.yml`) runs on every push. It
+SSHes into the server and runs `scripts/update.sh`. This is the fast path -
+it deploys within seconds and shows a green check on the commit.
+
+**A server-side timer** runs `scripts/autodeploy.sh` every minute, polls
+GitHub, and deploys anything it finds. This is the backstop: it keeps
+working if Actions is disabled, misconfigured, or out of minutes.
+
+Both take the same lock, so whichever gets there first does the work and
+the other finds nothing to do. They cannot race over the working copy.
+
+The workflow needs two repository secrets (Settings -> Secrets and
 variables -> Actions):
 
 | Secret | Value |
@@ -385,173 +407,45 @@ variables -> Actions):
 | `DEPLOY_SSH_KEY` | the private key (see below) |
 | `DEPLOY_SSH_KNOWN_HOSTS` | the server's host key (optional but recommended) |
 
-The server address, user and repo path are written into the workflow
-itself. They are not secret - the address is in public DNS - and keeping
-them out of the secret store means they cannot be pasted with a stray
-character, and they appear in the log so any mistake is obvious.
-
-To create the key pair and authorise it on the server:
+To create the key and authorise it on the server:
 
 ```sh
 sudo ./scripts/install-ci-key.sh --show-private
 ```
 
-It prints the private key to paste into `DEPLOY_SSH_KEY`, and adds the
-public key to the server's `authorized_keys`. It is safe to run more than
-once.
+### On the server
 
-Watching a deploy:
-
-```sh
-# on the server
-sudo journalctl -u honeybeesmp-autodeploy-dev.service -f   # the backstop
-sudo journalctl -u honeybeesmp-autodeploy-live.service -f
-tail -f ~/honeybeesmp/logs/backup.log                     # backups
-```
+| Service | How it runs |
+|---|---|
+| Website and panel | nginx, TLS from Let's Encrypt, auto-renews |
+| Crafty Controller | Docker, panel on 127.0.0.1:8443 behind nginx |
+| Backups | systemd timer, twice a day |
+| Auto-deploy | systemd timer, every minute |
+| Discord bot | not deployed yet |
 
 ---
 
-## Backups
+## Setting up a new machine
 
-The live world is backed up to **Google Drive** (2 TB) by `scripts/backup.sh`,
-which runs twice daily via a systemd timer.
+1. Get an SSH key for the server, then:
 
-Each run packs everything into a **single zip** and uploads that. One zip is
-one file on Drive, so an upload is one API call rather than hundreds, and a
-restore is one download plus `unzip`.
+   ```sh
+   ssh -i ~/path/to/key ubuntu@132.145.16.69
+   ```
 
-```
-Google Drive: HoneyBeeSMP/
-  backup-2026-10-21_0005.zip   dated archives (7 most recent kept)
-  latest.zip                   rolling copy of the newest archive
-```
+2. Clone the repo:
 
-Each archive contains:
+   ```sh
+   git clone git@github.com:NuttyRabbit/HoneyBeeSMP.git ~/honeybeesmp
+   cd ~/honeybeesmp
+   ```
 
-```
-minecraft/<server-id>/   the world's files, config and mods
-crafty/config/           panel config, users and schedules
-content/                 website, bot and repo
-```
+3. Deploy:
 
-Only the **live** server is backed up. Its Crafty ID is set at the top of
-`backup.sh`:
+   ```sh
+   ./scripts/deploy.sh live
+   ```
 
-```sh
-MINECRAFT_SERVERS=${MINECRAFT_SERVERS:-119045e1-1fac-41a0-83c0-5e2d85ce4c78}
-```
-
-That is the live world. `d48afa12-...` is the development/testing server and is
-deliberately **excluded**, so dev experiments can never overwrite a good live
-snapshot. For more than one, list the IDs space-separated.
-
-### Restoring
-
-```sh
-rclone copyto gdrive:HoneyBeeSMP/latest.zip /tmp/restore.zip
-unzip -q /tmp/restore.zip -d /tmp/restore
-# then copy the parts you need back, with the server stopped
-```
-
-### Things to know
-
-- **Consistency.** A running server writes to its world while we copy it. The
-  script detects a live Java process and logs a `WARNING` when this happens.
-  For a guaranteed-consistent snapshot, stop the server first. The warning
-  tells you which kind of copy you got.
-- **Every run uploads a new archive.** A zip cannot be updated in place, so
-  each run uploads the whole thing. At ~160 MB that is quick, and older
-  archives are pruned to keep only the most recent few.
-
-### Running it by hand
-
-```sh
-sudo systemctl start honeybeesmp-backup.service   # run now
-journalctl -u honeybeesmp-backup.service -f       # watch it
-systemctl list-timers honeybeesmp-backup.timer    # see the schedule
-
-./scripts/backup.sh --dry-run                     # preview, changes nothing
-BACKUP_KEEP=14 ./scripts/backup.sh                # keep 14 archives
-MINECRAFT_SERVERS="id1 id2" ./scripts/backup.sh   # override which worlds
-```
-
-Logs are written to `logs/backup.log` (gitignored).
-
-### Credentials
-
-rclone authenticates with our **own OAuth client** — not rclone's shared ID,
-which is throttled and being retired during 2026. The client ID and secret live
-in `~/.config/rclone/rclone.conf` on the server and on the laptop. To
-re-authenticate, run `rclone config reconnect gdrive:` somewhere with a
-browser, then copy that file across.
-
----
-
-## Layout
-
-```
-.
-├── .github/workflows/
-│   ├── checks.yml                 CI: sanity checks on push
-│   └── deploy.yml                 CI: deploys dev or live over SSH
-├── Makefile                       task shortcuts
-├── README.md
-├── bot/                           Discord bot
-│   ├── .env.example               template (real .env stays on the server)
-│   ├── .rsync-exclude
-│   ├── data/                      runtime state (gitignored)
-│   ├── logs/                      runtime logs (gitignored)
-│   └── src/                       bot source
-├── minecraft/                     version-controlled server config
-│   ├── server.properties          template (@SERVER_PORT@ filled per env)
-│   ├── config/                    NeoForge settings
-│   ├── defaultconfigs/
-│   ├── env/dev/env.conf           DEV server id and port
-│   ├── env/live/env.conf          LIVE server id and port
-│   └── mods/mods.manifest         the mod list
-├── scripts/
-│   ├── backup.sh                  rclone snapshot of the live world -> Drive
-│   ├── check.sh                   no secrets / no huge files / ignore rules
-│   ├── crafty.sh                  Crafty panel API: start/stop/restart
-│   ├── deploy-minecraft.sh        apply minecraft/ config to a server
-│   ├── deploy.sh                  repo -> a dev or live environment
-│   ├── install-backup-timer.sh    schedule backup.sh via systemd
-│   ├── install-ci-key.sh          create the key GitHub Actions deploys with
-│   └── update.sh                  pull + check + deploy + reload nginx
-└── website/
-    └── index.html                 the public landing page
-```
-
-Navigation symlinks that live alongside the repo (not tracked):
-`crafty-panel`, `minecraft-servers`, `discord-bot`.
-
----
-
-## Services on the host
-
-| Service | How it runs | Notes |
-|---|---|---|
-| Website + panel (TLS) | nginx | Let's Encrypt cert, auto-renew via certbot.timer |
-| Crafty Controller | Docker (`crafty_container`) | panel on `127.0.0.1:8443`, proxied by nginx |
-| Discord bot | not deployed yet | use `./scripts/deploy.sh bot` when ready |
-
-Useful commands:
-
-```sh
-sudo docker ps
-sudo docker logs crafty_container -f
-sudo nginx -t && sudo systemctl reload nginx
-sudo certbot certificates
-```
-
----
-
-## First-time setup on a new machine
-
-1. Install the deploy key (see below) or use your own credentials.
-2. `git clone git@github.com:NuttyRabbit/HoneyBeeSMP.git ~/honeybeesmp`
-3. `./scripts/deploy.sh`
-
-The server already has a write-enabled **deploy key** at
-`~/.ssh/honeybeesmp_deploy`, wired up through `~/.ssh/config`, so pushes and
-pulls work without a token.
+The server already has a write-enabled deploy key at
+`~/.ssh/honeybeesmp_deploy`, wired up through `~/.ssh/config`, so pushes
+and pulls work without a token.

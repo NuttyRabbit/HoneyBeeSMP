@@ -75,6 +75,18 @@ if [ -z "$SERVER_ID" ] || [ -z "$SERVER_PORT" ]; then
 	exit 1
 fi
 
+# The world settings have to be present too: a missing one would render
+# an empty value into server.properties, and Minecraft would then fall back
+# to its own defaults - which for the dev server would quietly mean a
+# normal world instead of the superflat we asked for.
+for needed in LEVEL_NAME LEVEL_TYPE GENERATOR_SETTINGS GENERATE_STRUCTURES; do
+	eval "have=\$$needed"
+	if [ -z "$have" ]; then
+		echo "env.conf for '$ENV' is missing $needed" >&2
+		exit 1
+	fi
+done
+
 TARGET="$SERVERS_DIR/$SERVER_ID"
 if [ ! -d "$TARGET" ]; then
 	echo "server directory not found: $TARGET" >&2
@@ -92,19 +104,28 @@ echo "==> environment: $ENV (server $SERVER_ID, port $SERVER_PORT)"
 # The values are substituted with a small python helper rather than sed,
 # because generator-settings is JSON containing "/" and "&", which are
 # special in a sed replacement.
+#
+# The values are passed through the environment rather than as positional
+# arguments. Positional arguments are easy to get out of step with the
+# script that reads them - and when that happens the failure is an
+# IndexError deep inside a heredoc, with the real cause nowhere to be seen.
 RENDERED=$(mktemp)
-python3 - "$MC_SRC/server.properties" "$RENDERED" \
-	"$SERVER_PORT" "$LEVEL_NAME" "$LEVEL_TYPE" "$GENERATOR_SETTINGS" "$GENERATE_STRUCTURES" <<'PY'
+SERVER_PORT="$SERVER_PORT" \
+LEVEL_NAME="$LEVEL_NAME" \
+LEVEL_TYPE="$LEVEL_TYPE" \
+GENERATOR_SETTINGS="$GENERATOR_SETTINGS" \
+GENERATE_STRUCTURES="$GENERATE_STRUCTURES" \
+python3 - "$MC_SRC/server.properties" "$RENDERED" <<'PY'
+import os
 import sys
 
 src, dest = sys.argv[1], sys.argv[2]
 values = {
-    "@SERVER_PORT@": sys.argv[3],
-    "@SERVER_ADDRESS@": sys.argv[4],
-    "@LEVEL_NAME@": sys.argv[5],
-    "@LEVEL_TYPE@": sys.argv[6],
-    "@GENERATOR_SETTINGS@": sys.argv[7],
-    "@GENERATE_STRUCTURES@": sys.argv[8],
+    "@SERVER_PORT@": os.environ["SERVER_PORT"],
+    "@LEVEL_NAME@": os.environ["LEVEL_NAME"],
+    "@LEVEL_TYPE@": os.environ["LEVEL_TYPE"],
+    "@GENERATOR_SETTINGS@": os.environ["GENERATOR_SETTINGS"],
+    "@GENERATE_STRUCTURES@": os.environ["GENERATE_STRUCTURES"],
 }
 
 with open(src, encoding="utf-8") as fh:
@@ -112,6 +133,16 @@ with open(src, encoding="utf-8") as fh:
 
 for key, value in values.items():
     text = text.replace(key, value)
+
+# A placeholder that is still in the file means the template and the
+# renderer have drifted apart. Writing it out anyway would give the
+# server a broken setting, so stop here instead.
+leftover = [key for key in values if key in text]
+if leftover:
+    sys.exit(
+        "server.properties template has placeholder(s) this script does "
+        "not fill in: " + ", ".join(sorted(leftover))
+    )
 
 with open(dest, "w", encoding="utf-8") as fh:
     fh.write(text)

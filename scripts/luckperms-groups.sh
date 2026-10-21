@@ -28,7 +28,14 @@
 # Usage:
 #   ./scripts/luckperms-groups.sh <server-id> [owner]
 #
-# The owner, if given, is put in the admin group.
+# The owner may be given as a name or as a UUID. A UUID is better: it
+# works even for a player who has never joined, because LuckPerms looks
+# names up through the Mojang API and will not create a record for
+# somebody it has never seen. Get the UUID from the server's ops.json.
+#
+# The owner also needs to be a server operator, for the vanilla commands:
+#
+#     ./scripts/crafty.sh cmd <server-id> "op <player>"
 
 set -eu
 
@@ -97,3 +104,4 @@ fi
 
 echo "done - the groups are applied. Give it a moment, then check with:"
 echo "  ./scripts/crafty.sh cmd $SERVER_ID \"luckperms listgroups\""
+echo "  ./scripts/crafty.sh cmd $SERVER_ID \"luckperms group admin info\""

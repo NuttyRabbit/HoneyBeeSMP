@@ -11,7 +11,7 @@ The official modpack for the **HoneyBeeSMP** Minecraft server.
 
 ## How to install
 
-1. Open **Modrinth App**, **Prism Launcher** or **CurseForge**.
+1. Open **Modrinth App** or **Prism Launcher**.
 2. Find the **HoneyBeeSMP** project and install it.
 3. Launch with Minecraft 1.21.1 and NeoForge 21.1.264.
 

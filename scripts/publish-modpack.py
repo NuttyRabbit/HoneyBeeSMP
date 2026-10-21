@@ -46,7 +46,7 @@ PROJECT = {
     "description": "The official modpack for the HoneyBeeSMP Minecraft server.",
     "body": (
         "The mods and configs for the HoneyBeeSMP Minecraft server.\n\n"
-        "Import this pack into Modrinth App, Prism Launcher or CurseForge "
+        "Import this pack into Modrinth App or Prism Launcher "
         "and it will keep itself up to date: when the server changes its "
         "mods, the launcher offers you the new version before you play.\n\n"
         "Minecraft 1.21.1, NeoForge 21.1.264.\n"

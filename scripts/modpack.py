@@ -2,7 +2,7 @@
 """modpack.py — manage the HoneyBeeSMP Minecraft modpack.
 
 The pack is described by a Modrinth index file (modrinth.index.json).
-That format is the community standard: Modrinth, Prism Launcher, CurseForge
+That format is the community standard: Modrinth and Prism Launcher
 and ATLauncher all understand it, and every entry records which side the
 file belongs to (client, server, or both) along with a hash to verify the
 download.

@@ -51,6 +51,7 @@ fi
 # generation settings).
 SERVER_ID=""
 SERVER_PORT=""
+SERVER_ADDRESS=""
 LEVEL_NAME=""
 LEVEL_TYPE=""
 GENERATOR_SETTINGS=""
@@ -61,6 +62,7 @@ while IFS='=' read -r key value; do
 	\#*) continue ;;
 	SERVER_ID) SERVER_ID=$value ;;
 	SERVER_PORT) SERVER_PORT=$value ;;
+	SERVER_ADDRESS) SERVER_ADDRESS=$value ;;
 	LEVEL_NAME) LEVEL_NAME=$value ;;
 	LEVEL_TYPE) LEVEL_TYPE=$value ;;
 	GENERATOR_SETTINGS) GENERATOR_SETTINGS=$value ;;
@@ -98,10 +100,11 @@ import sys
 src, dest = sys.argv[1], sys.argv[2]
 values = {
     "@SERVER_PORT@": sys.argv[3],
-    "@LEVEL_NAME@": sys.argv[4],
-    "@LEVEL_TYPE@": sys.argv[5],
-    "@GENERATOR_SETTINGS@": sys.argv[6],
-    "@GENERATE_STRUCTURES@": sys.argv[7],
+    "@SERVER_ADDRESS@": sys.argv[4],
+    "@LEVEL_NAME@": sys.argv[5],
+    "@LEVEL_TYPE@": sys.argv[6],
+    "@GENERATOR_SETTINGS@": sys.argv[7],
+    "@GENERATE_STRUCTURES@": sys.argv[8],
 }
 
 with open(src, encoding="utf-8") as fh:

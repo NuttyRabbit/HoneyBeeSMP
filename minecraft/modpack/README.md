@@ -10,7 +10,7 @@ clicks play gets exactly this pack installed, and is told when it changes.
 
 ## What is in the pack
 
-53 mods, chosen to be a coherent set rather than the biggest one possible.
+27 mods, chosen to be a coherent set rather than the biggest one possible.
 
 ### Create and factory building
 
@@ -20,32 +20,11 @@ clicks play gets exactly this pack installed, and is told when it changes.
 | Create: Crafts & Additions | Extra Create machines and fluids. |
 | Create: Big Cannons | Cannons and projectiles for Create. |
 | Create: Compression | Compressors and the machines around them. |
-| Create: Ore Excavation | The drill rebalance, which is what makes Create's mining loop worth playing. |
-| Create: Numismatics | Currency, so the factory has something to be worth. |
 | Sophisticated Storage | Storage blocks, and the drawers Create fills them with. |
 | Productive Bees | Bees, and the automation built around them. |
 | FastSuite / FastWorkbench | Crafting speed, so a big factory is not painful to use. |
 | Ritchie's Projectile Library | Required by Big Cannons. |
 | Sophisticated Core | Required by Sophisticated Storage. |
-
-### Server side
-
-These do not go on players' clients. The pack records that, so the launcher
-skips them and the server still installs them.
-
-| Mod | Why |
-|---|---|
-| LuckPerms | Permissions. |
-| Open Parties and Claims | Claims, parties and grief protection. |
-| Open Parties and Claims: PvP Support | Lets players fight inside their claims. |
-| Open Parties and Claims: Essentials | Commands and conveniences for claims. |
-| KubeJS | Server-side scripting. |
-| Lithium | Tick performance. |
-| ModernFix | Memory and startup performance. |
-| Noisium | Fewer random ticks, which matters on a server full of machinery. |
-| AntiXray | Stops ore and cave reveals through the server. |
-| Spark | Profiler. Run `/spark` to see where the time goes. |
-| Necronomicon API | Required by Open Parties and Claims. |
 
 ### Quality of life
 
@@ -55,35 +34,29 @@ skips them and the server still installs them.
 | Jade | Block information in the world. |
 | AppleSkin | Shows real food values. |
 | Waystones | Teleport stones, for getting around. |
-| WTHIT | Shows what a waystone links to. |
 | Shulker Box Tooltip | See what is in a shulker without opening it. |
 | Mouse Tweaks | Inventory right-click behaviour. |
 | BetterF3 | F3 debug screen. |
 | No Chat Reports | Chat without the reporting system. |
-| Legendary Tooltips | Nicer tooltips. |
-| Clumps | Merges XP orbs. |
 | Balm | Required by Waystones. |
 | Cloth Config | Required by several mods. |
 | Placebo | Required by FastSuite. |
 
-### Performance, client side
+### Performance
 
 | Mod | Why |
 |---|---|
 | FerriteCore | A large chunk of the frame-time saving. |
-| Sodium | Rendering performance. |
-| More Culling | Culls entities you cannot see. |
-| Continuity | Connected textures - Create looks far better with them. |
+| Spark | Profiler. Run `/spark` to see where the time goes. |
+| AntiXray | Stops ore and cave reveals through the server. |
 
 ### Exploration and world generation
 
 | Mod | Why |
 |---|---|
 | Terralith | Better terrain, caves and biomes. |
-| Tectonic | Terrain shaping - mountains and landforms at a scale Terralith does not do. |
-| Lithostitched | Required by Terralith and Tectonic. |
+| Lithostitched | Required by Terralith. |
 | Xaero's Minimap | Minimap and waypoints, for exploring. |
-| Xaero's World Map | The world map, to go with it. |
 
 ## Why a pack and not a list of mods
 
@@ -103,9 +76,8 @@ what a player installs - and they can never drift apart.
 The pack also records a SHA-512 hash for every file, so a download that is
 corrupted or tampered with is caught rather than silently installed.
 
-Of the 53 mods, 26 are installed on the server and 27 on players' clients.
-Mods that are on neither, or on both, sit in between - the pack records
-each file's split exactly.
+25 of the 27 mods go on the server. The two that do not - Mouse Tweaks and
+BetterF3 - are client only, and players get them from the pack.
 
 ## Layout
 
@@ -176,23 +148,10 @@ the jar. Restart the server afterwards so it stops loading the mod.
 The pack is deliberately curated rather than exhaustive. A few rules we
 follow:
 
-- **One mod per job.** Xaero's Minimap is in, JourneyMap is not. More
-  Culling is in, Entity Culling is not - More Culling does the same job
-  and keeps the other one out of the way.
-- **One recipe viewer.** EMI is in, JEI is not - they clash.
+- **One mod per job.** Xaero's Minimap is in, JourneyMap is not.
+- **No redundant world generators.** Terralith is in; Tectonic and Modern
+  World Creation are not, because they fight with it.
 - **Check for conflicts before adding.** A client-only mod on the server
   crashes it with `NoClassDefFoundError: org/lwjgl/Version`.
 - **Prefer mods that serve both sides.** Mods that work on the client and
   the server mean one pack covers everyone.
-- **Be careful with world generators.** Terralith and Tectonic are both in
-  and they do work together - the Tectonic jar ships the Terratonic
-  overlay, which is the Terralith-compatible variant of it. That is a
-  deliberate pairing, not an accident: Tectonic on its own reshapes the
-  terrain in a way that fights Terralith's biomes.
-
-### A note on the pack's size
-
-53 mods is a lot, and some of them pull in a fair bit underneath - Create
-Ore Excavation needs Sinytra Connector and Forgified Fabric API to run on
-NeoForge, which is how it ships for 1.21.1. If the server starts slowly
-or a mod misbehaves, that pairing is worth looking at first.

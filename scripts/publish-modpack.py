@@ -448,6 +448,21 @@ def cmd_create(args) -> int:
     return 0
 
 
+def version_tuple(number: str) -> tuple:
+    """A version number as a tuple, so two of them can be compared.
+
+    The pack's version is plain semver, but a stray non-number should not
+    crash the deploy - it should just mean "we cannot tell, so publish".
+    """
+    parts = number.split(".")
+    while len(parts) < 3:
+        parts.append("0")
+    try:
+        return tuple(int(p) for p in parts[:3])
+    except ValueError:
+        return (-1, -1, -1)
+
+
 def cmd_publish(args) -> int:
     token = read_token()
     project_id = read_project_id()
@@ -470,12 +485,22 @@ def cmd_publish(args) -> int:
     current_id = content.get("version_id")
     if current_id:
         current = api_get(f"/version/{current_id}", token, missing_ok=True, v3=True)
-        if current and current.get("version_number") == version_number:
-            info(f"version {version_number} is already published - nothing to do")
-            # Still check the address: the listing should always say where
-            # the server actually is, and this costs one request.
-            sync_address(token, project_id)
-            return 0
+        if current:
+            published = current.get("version_number", "")
+            if version_tuple(version_number) <= version_tuple(published):
+                # Not just "the same version": anything older is also
+                # refused. The repo's version is the source of truth, but
+                # Modrinth will not accept a version it has seen, and
+                # pointing the content backwards would send every client
+                # back to an older pack.
+                info(
+                    f"version {version_number} is not newer than the published "
+                    f"version {published} - nothing to do"
+                )
+                # Still check the address: the listing should always say
+                # where the server actually is, and this costs one request.
+                sync_address(token, project_id)
+                return 0
 
     changelog = args.changelog or f"Modpack {version_number}"
     version = upload_pack_version(token, project_id, version_number, changelog)

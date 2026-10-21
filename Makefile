@@ -28,7 +28,8 @@ LIVE_SERVER := 119045e1-1fac-41a0-83c0-5e2d85ce4c78
         crafty-up crafty-down crafty-logs \
         mc-status mc-status-dev mc-restart mc-restart-dev \
         backup backup-log update update-dev \
-        modpack modpack-add modpack-publish modpack-status modpack-verify whitelist
+        modpack modpack-add modpack-publish modpack-bump modpack-status modpack-verify \
+        whitelist
 
 help: ## Show this help
 	@echo "HoneyBeeSMP — available targets:"
@@ -133,9 +134,11 @@ modpack-add: ## Add a mod to the modpack: make modpack-add SLUG=create
 	@test -n "$(SLUG)" || { echo "usage: make modpack-add SLUG=<modrinth-slug>"; exit 2; }
 	@python3 "$(REPO_DIR)/scripts/modpack.py" add "$(SLUG)" --env dev
 
-modpack-publish: ## Bump the pack version and publish it to Modrinth
-	@python3 "$(REPO_DIR)/scripts/modpack.py" bump
+modpack-publish: ## Publish the pack in the repo to Modrinth
 	@python3 "$(REPO_DIR)/scripts/publish-modpack.py" publish
+
+modpack-bump: ## Bump the pack version in the repo (commit it before pushing)
+	@python3 "$(REPO_DIR)/scripts/modpack.py" bump
 
 modpack-status: ## Show the Modrinth project and its latest version
 	@python3 "$(REPO_DIR)/scripts/publish-modpack.py" status

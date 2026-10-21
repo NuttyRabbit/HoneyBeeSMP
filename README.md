@@ -409,21 +409,22 @@ launcher keeps them up to date, and nobody has to re-download anything by
 hand.
 
 The live deploy publishes automatically. It only publishes when the pack
-in the repo is a version Modrinth has not seen, so a deploy that does not
-touch the pack leaves the published one alone.
+in the repo is a **newer** version than the one Modrinth has, so a deploy
+that does not touch the pack leaves the published one alone.
 
 To publish by hand:
 
 ```sh
-make modpack-publish    # bumps the version, then publishes
+make modpack-publish    # publish the pack in the repo
+make modpack-bump       # bump the pack version (in the repo)
 make modpack-status     # what is published right now
 make modpack            # what is in the pack
 ```
 
-Modrinth rejects a version number it has seen before, so the version is
-bumped first. `modpack.py add` bumps it too, whenever it changes what is
-in the pack - so the version in the repo always describes the pack that is
-actually there.
+The version lives in the repo, so it has to be committed and pushed for
+the deploy to publish it. `modpack.py add` bumps it whenever it changes
+what is in the pack, so the version in the repo always describes the
+pack that is actually there.
 
 **The project is still a draft.** Until a moderator approves it, nobody can
 see the server listing and the pack cannot be downloaded. Publishing skips
@@ -470,7 +471,8 @@ make mc-restart-dev    # restart dev
 # modpack
 make modpack           # what is in the pack
 make modpack-add SLUG=create
-make modpack-publish   # bump and publish to Modrinth
+make modpack-publish   # publish the pack to Modrinth
+make modpack-bump      # bump the pack version in the repo
 make modpack-status    # what is published
 make modpack-verify    # do the server's mods match the pack?
 make whitelist         # who may join the dev server

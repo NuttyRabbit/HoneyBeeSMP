@@ -93,7 +93,7 @@ and try again.
 
 ## What is in the pack
 
-60 mods, chosen to work well together rather than to be the biggest set
+65 mods, chosen to work well together rather than to be the biggest set
 possible.
 
 ### Create and factory building

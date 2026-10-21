@@ -67,10 +67,10 @@ so Modrinth knows exactly which mods you need.
 2. Find **HoneyBeeSMP** on Modrinth and click **play**.
 3. Modrinth App installs the mods and puts you straight into the server.
 
-If you would rather install it yourself, the pack is on the project's
-**Files** tab. It is a Modrinth pack, so Modrinth App and Prism Launcher
-both handle it, and both will offer you the update when we publish a new
-version.
+If you would rather install it yourself, the pack is published as a
+version of the project. It is a Modrinth pack, so Modrinth App and Prism
+Launcher both handle it, and both will offer you the update when we
+publish a new version.
 
 ## Staying up to date
 

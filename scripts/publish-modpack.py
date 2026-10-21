@@ -482,6 +482,8 @@ def cmd_publish(args) -> int:
     point_content_at(token, project_id, version["id"])
     info(f"published {version.get('version_number')} ({version.get('id')})")
     info(f"  url: https://modrinth.com/server/{SERVER['slug']}")
+    for file in version.get("files", []):
+        info(f"  pack: {file.get('url')}")
     return 0
 
 

@@ -28,7 +28,7 @@ LIVE_SERVER := 119045e1-1fac-41a0-83c0-5e2d85ce4c78
         crafty-up crafty-down crafty-logs \
         mc-status mc-status-dev mc-restart mc-restart-dev \
         backup backup-log update update-dev \
-        modpack modpack-add modpack-publish modpack-status modpack-verify
+        modpack modpack-add modpack-publish modpack-status modpack-verify whitelist
 
 help: ## Show this help
 	@echo "HoneyBeeSMP — available targets:"
@@ -142,3 +142,6 @@ modpack-status: ## Show the Modrinth project and its latest version
 
 modpack-verify: ## Check the live server's mods against the pack
 	@python3 "$(REPO_DIR)/scripts/modpack.py" verify /opt/crafty/servers/119045e1-1fac-41a0-83c0-5e2d85ce4c78/mods
+
+whitelist: ## Show who may join an environment: make whitelist ENV=dev
+	@python3 "$(REPO_DIR)/scripts/whitelist.py" list $${ENV:-dev}

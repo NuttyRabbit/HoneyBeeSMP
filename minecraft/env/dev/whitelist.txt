@@ -1,0 +1,12 @@
+# Players who may join the development server.
+#
+# One name per line. Blank lines and anything after a # are ignored.
+#
+# The names are resolved to UUIDs against Mojang's API when the server's
+# whitelist is built, so a typo here fails the deploy rather than
+# silently locking someone out.
+#
+# The whitelist only takes effect when the server is restarted, because
+# Minecraft reads it at startup.
+
+NuttyRabbit

@@ -19,8 +19,8 @@ the server changes.
 ## What the server is
 
 A community server where the point is building things. Create is the
-centrepiece, and the mods around it turn it into a factory game rather
-than a solo one:
+centrepiece, and the mods around it turn it into a Multiplayer Factory
+game:
 
 - **Create** - belts, shafts, cogs, trains and contraptions
 - **Create: Crafts & Additions** - extra Create machines and fluids

@@ -56,6 +56,7 @@ LEVEL_NAME=""
 LEVEL_TYPE=""
 GENERATOR_SETTINGS=""
 GENERATE_STRUCTURES=""
+WHITELIST=""
 while IFS='=' read -r key value; do
 	case "$key" in
 	"") continue ;;
@@ -67,6 +68,7 @@ while IFS='=' read -r key value; do
 	LEVEL_TYPE) LEVEL_TYPE=$value ;;
 	GENERATOR_SETTINGS) GENERATOR_SETTINGS=$value ;;
 	GENERATE_STRUCTURES) GENERATE_STRUCTURES=$value ;;
+	WHITELIST) WHITELIST=$value ;;
 	esac
 done < "$ENV_FILE"
 
@@ -86,6 +88,20 @@ for needed in LEVEL_NAME LEVEL_TYPE GENERATOR_SETTINGS GENERATE_STRUCTURES; do
 		exit 1
 	fi
 done
+
+# The whitelist switch, too. An empty value here would turn the whitelist
+# off silently, which for the dev server means anyone could get in.
+if [ -z "$WHITELIST" ]; then
+	echo "env.conf for '$ENV' is missing WHITELIST" >&2
+	exit 1
+fi
+case "$WHITELIST" in
+true | false) ;;
+*)
+	echo "env.conf for '$ENV' has WHITELIST=$WHITELIST; it must be true or false" >&2
+	exit 1
+	;;
+esac
 
 TARGET="$SERVERS_DIR/$SERVER_ID"
 if [ ! -d "$TARGET" ]; then
@@ -115,6 +131,7 @@ LEVEL_NAME="$LEVEL_NAME" \
 LEVEL_TYPE="$LEVEL_TYPE" \
 GENERATOR_SETTINGS="$GENERATOR_SETTINGS" \
 GENERATE_STRUCTURES="$GENERATE_STRUCTURES" \
+WHITELIST="$WHITELIST" \
 python3 - "$MC_SRC/server.properties" "$RENDERED" <<'PY'
 import os
 import sys
@@ -126,6 +143,7 @@ values = {
     "@LEVEL_TYPE@": os.environ["LEVEL_TYPE"],
     "@GENERATOR_SETTINGS@": os.environ["GENERATOR_SETTINGS"],
     "@GENERATE_STRUCTURES@": os.environ["GENERATE_STRUCTURES"],
+    "@WHITELIST@": os.environ["WHITELIST"],
 }
 
 with open(src, encoding="utf-8") as fh:
@@ -164,6 +182,41 @@ else
 	sudo chown opc:root "$TARGET/server.properties" 2>/dev/null || true
 fi
 rm -f "$RENDERED" "$CURRENT"
+
+# ---------------------------------------------------------------------------
+# 1a. The whitelist
+# ---------------------------------------------------------------------------
+# The list of who may join lives in the repo, as player names. Minecraft's
+# own whitelist file records UUIDs, so the names are resolved through
+# Mojang's API and the file is written out.
+#
+# The server reads its whitelist at startup, so a change here only takes
+# effect after a restart. It is written even when the server is running,
+# because the server only rewrites the file when its own whitelist
+# changes - so a file we write is not clobbered by the running server.
+WHITELIST_SRC="$MC_SRC/env/$ENV/whitelist.txt"
+if [ -f "$WHITELIST_SRC" ]; then
+	echo "    whitelist:"
+	WHITELIST_RENDERED=$(mktemp)
+	if ! python3 "$REPO_ROOT/scripts/whitelist.py" build "$ENV" "$WHITELIST_RENDERED"; then
+		echo "    could not build the whitelist - leaving the server's alone" >&2
+		rm -f "$WHITELIST_RENDERED"
+	else
+		WHITELIST_CURRENT=$(mktemp)
+		if sudo test -f "$TARGET/whitelist.json"; then
+			sudo cat "$TARGET/whitelist.json" > "$WHITELIST_CURRENT" 2>/dev/null || true
+		fi
+		if cmp -s "$WHITELIST_RENDERED" "$WHITELIST_CURRENT"; then
+			echo "    whitelist unchanged"
+		else
+			echo "    whitelist changed - updating"
+			sudo cp "$WHITELIST_RENDERED" "$TARGET/whitelist.json"
+			sudo chown opc:root "$TARGET/whitelist.json" 2>/dev/null || true
+			echo "    (takes effect the next time the server starts)"
+		fi
+		rm -f "$WHITELIST_RENDERED" "$WHITELIST_CURRENT"
+	fi
+fi
 
 # ---------------------------------------------------------------------------
 # 1b. JVM memory settings

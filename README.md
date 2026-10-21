@@ -317,6 +317,7 @@ minecraft/
 └── env/
     ├── dev/env.conf       DEV server port, address, world settings, MC version
     ├── dev/jvm_args.txt   DEV heap size
+    ├── dev/whitelist.txt  who may join the dev server
     ├── live/env.conf      LIVE server port, address, world settings, MC version
     └── live/jvm_args.txt  LIVE heap size
 ```
@@ -329,6 +330,28 @@ Two things to know:
   startup. See [Restart a Minecraft server](#restart-a-minecraft-server).
 - **Never edit the config on the server directly.** The next deploy
   overwrites it. If you must, change it in the repo instead.
+
+### The whitelist
+
+Who may join is set per environment, in `minecraft/env/<env>/env.conf`:
+
+```
+WHITELIST=true     # only the listed names can join
+WHITELIST=false    # anyone can join
+```
+
+The names themselves are in `minecraft/env/<env>/whitelist.txt`, one per
+line. The deploy resolves them to UUIDs through Mojang's API and writes
+the server's `whitelist.json`, so a typo fails the deploy rather than
+silently locking someone out.
+
+```sh
+make whitelist              # who may join the dev server
+make whitelist ENV=live     # the live server
+```
+
+Minecraft reads its whitelist at startup, so a change only takes effect
+after a restart.
 
 ### Memory
 
@@ -450,6 +473,7 @@ make modpack-add SLUG=create
 make modpack-publish   # bump and publish to Modrinth
 make modpack-status    # what is published
 make modpack-verify    # do the server's mods match the pack?
+make whitelist         # who may join the dev server
 
 # housekeeping
 make status            # git, services, and repo-vs-live drift

@@ -154,15 +154,13 @@ The *world data* is too big for git and is backed up separately, but the
 ```
 minecraft/
 ├── server.properties      template; @SERVER_PORT@ is filled in per env
-├── modpack/               the modpack (see minecraft/modpack/README.md)
-│   ├── modrinth.index.json  the mods, hashes and client/server split
-│   ├── overrides/           config for both client and server
-│   ├── client-overrides/    config for players only
-│   └── server-overrides/    config for the server only
+├── config/                NeoForge server settings
+├── defaultconfigs/
+├── mods/mods.manifest     the mod list (jars are not in git)
 └── env/
-    ├── dev/env.conf       DEV server id, port, MC and loader version
+    ├── dev/env.conf       DEV server id and port
     ├── dev/jvm_args.txt   DEV heap size
-    ├── live/env.conf      LIVE server id, port, MC and loader version
+    ├── live/env.conf      LIVE server id and port
     └── live/jvm_args.txt  LIVE heap size
 ```
 
@@ -172,47 +170,76 @@ the server jars.
 
 ### Adding a mod
 
-Mods live in a [Modrinth pack](minecraft/modpack/) at
-`minecraft/modpack/modrinth.index.json`. That format records, for every
-mod, which side it belongs to and a hash to verify the download. It is also
-the format players import, so the server and the client can never drift
-apart.
+Mods are listed in `minecraft/mods/mods.manifest`, one per line:
 
-Everything is done through one tool, `scripts/modpack.py`, which is the
-same code the deploy uses.
-
-**1. Add the mod.** Use its Modrinth project slug:
-
-```sh
-python3 scripts/modpack.py add create --env dev
+```
+<the-exact-jar-filename>.jar  <direct-download-url>
 ```
 
-This resolves the correct build for our Minecraft version and loader, and
-**pulls in required dependencies automatically** - so you will not hit
-"Mod X requires Y or above" on the server.
+The jar files themselves are not in git - they are downloaded on the server
+by the deploy.
 
-It also records the client/server split, so a client-only mod like Sodium
-is never installed on the server, and a server-only mod is never asked of
-players.
+**1. Find a server-side build.**
 
-**2. Push to `develop` and let it install on the dev server.**
+This is the step people get wrong. A dedicated server must only run mods
+marked **"Server"** on Modrinth. A client-only mod will crash the server on
+startup, and the failure is cryptic:
+
+```
+Exception in thread "main" java.lang.NoClassDefFoundError: org/lwjgl/Version
+```
+
+That is what happens if you install a client-only mod such as Sodium, Xaero's
+or JourneyMap. Check the mod's page - if it says "Client: Required" and
+"Server: Not required", it is a client mod and does not belong here.
+
+You also need the build that matches:
+
+| | |
+|---|---|
+| Minecraft | 1.21.1 |
+| Mod loader | NeoForge |
+| Loader version | 21.1.264 |
+
+**2. Get the direct download URL and the exact filename.**
+
+Modrinth's API gives both, and avoids the "which of the seven files do I
+want" problem:
 
 ```sh
-git add minecraft/modpack
-git commit -m "Add Create"
+# list the versions available for our loader and game version
+curl -s "https://api.modrinth.com/v2/project/terralith/version?game_versions=%5B%221.21.1%22%5D&loaders=%5B%22neoforge%22%5D"
+```
+
+Each version has a `files` array; the entry with `"primary": true` is the
+one you want. Note its `filename` - the manifest must match it exactly.
+
+**3. Add the line to the manifest.**
+
+```
+# minecraft/mods/mods.manifest
+Terralith_1.21.1_v2.6.2_Neoforge.jar  https://cdn.modrinth.com/data/8oi3bsk5/versions/IY93YaEe/Terralith_1.21.1_v2.6.2_Neoforge.jar
+```
+
+The two columns are separated by whitespace. A `#` starts a comment.
+
+**4. Push to `develop` and let it install on the dev server.**
+
+```sh
+git add minecraft/mods/mods.manifest
+git commit -m "Add Terralith"
 git push origin develop
 ```
 
-The deploy downloads each mod, verifies its SHA-512 against the pack, and
-installs it. You will see:
+The deploy downloads the jar, checks it really is a jar (and not an HTML
+error page), and installs it. You will see it in the log:
 
 ```
-    installing mods from the pack
+==> reconciling mods
     downloading Terralith_1.21.1_v2.6.2_Neoforge.jar
-    2 server-side mod(s) in place
 ```
 
-**3. Restart the dev server so it loads the mod.**
+**5. Restart the dev server so it loads the mod.**
 
 Mods are read at startup, so the server must be restarted:
 
@@ -226,90 +253,40 @@ Then confirm it actually loaded, rather than assuming:
 sudo grep -A8 "Mod List" /opt/crafty/servers/d48afa12-59a5-496e-829a-1ced86d108b5/logs/latest.log
 ```
 
-**4. Test it, then promote to live.**
+**6. Test it, then promote to live.**
 
 Once it works on dev, merge to `main` and push. The live server gets the
-same pack, and the deploy publishes it to Modrinth so players are offered
-the update. **Restart the live server too** - it is a separate machine state:
+same jar. **Restart the live server too** - it is a separate machine state:
 
 ```sh
 make mc-restart              # on the server
 ```
 
-If the deploy does not publish for you, do it by hand - see
-[Giving the pack to players](#giving-the-pack-to-players) below.
-
 ### Removing a mod
 
-Remove its entry from `minecraft/modpack/modrinth.index.json` and push.
-The next deploy deletes the jar.
+Delete its line from the manifest and push. The next deploy removes the jar
+from the server:
+
+```
+    removing unlisted mod sodium-neoforge-0.8.13+mc1.21.1.jar
+```
 
 **Restart the server afterwards** so it stops loading the mod. The jar is
 gone from disk, but a running server keeps the mod loaded until it restarts.
 
-### Giving the pack to players
+### Mods and dependencies
 
-The pack is published to **Modrinth**, where players install it from.
-Modrinth App and Prism Launcher both watch the project for new versions,
-so when we publish, players are offered the update - nobody has to
-re-download a file by hand.
+If a mod needs another mod (a library, an API), **list both**. The manifest
+has no notion of dependencies, so anything the mod needs must be on the
+server too, or the server will not start. The error names what is missing:
 
-**One-time setup:**
-
-1. Create a Modrinth account, then a personal access token at
-   <https://modrinth.com/settings/account> with the **Create projects**
-   and **Create versions** scopes.
-2. On the server, save the token:
-
-   ```sh
-   mkdir -p ~/.config/modrinth
-   nano ~/.config/modrinth/token     # paste the token, one line
-   chmod 600 ~/.config/modrinth/token
-   ```
-
-3. Create the project and publish the first version:
-
-   ```sh
-   cd ~/honeybeesmp
-   python3 scripts/publish-modpack.py create
-   python3 scripts/publish-modpack.py publish
-   ```
-
-   `create` saves the project id to `~/.config/modrinth/project-id`.
-
-**Publishing a change:** the pack version has to move forward first,
-because Modrinth refuses a duplicate version number.
-
-```sh
-python3 scripts/modpack.py bump            # 1.0.0 -> 1.0.1
-python3 scripts/publish-modpack.py publish
+```
+[ERROR] Missing or unsupported mandatory dependencies:
+  Mod ID: 'lithostitched', Requested by: 'terralith', Expected range: '[1.7.7,)', Actual version: '[MISSING]'
+[FATAL] Error during pre-loading phase: Mod terralith requires lithostitched 1.7.7 or above
 ```
 
-Or, more usually, the live deploy does it for you - it publishes the pack
-after deploying, and skips the step with a clear message if Modrinth is
-not set up yet.
-
-Check the state any time with:
-
-```sh
-python3 scripts/publish-modpack.py status
-```
-
-**For players:** they install the pack from
-<https://modrinth.com/modpack/honeybeesmp> in Modrinth App, Prism
-Launcher or CurseForge. It carries every mod and config we run, and
-because it is generated from the same index the server deploys from, they
-are always on the same version as the server.
-
-### Checking the server against the pack
-
-```sh
-python3 scripts/modpack.py verify /opt/crafty/servers/<id>/mods
-```
-
-See `minecraft/modpack/README.md` for the full details of the pack format
-and the config directories (`overrides/`, `client-overrides/`,
-`server-overrides/`).
+Add a line for each dependency, in the same way. Some mods have several.
 
 ### Mods are not backed up as source
 
@@ -317,6 +294,37 @@ The mod jars live on the server and are re-downloaded from the manifest on
 every deploy, so they do not need to be in the backup. If a mod disappears
 from Modrinth, the manifest entry stops working - keep the URL stable, or
 vendor the jar somewhere permanent and point the manifest at that.
+
+### World generation
+
+Each environment has its own world settings, in
+`minecraft/env/<env>/env.conf`:
+
+| | level-type | biome | structures |
+|---|---|---|---|
+| dev | `minecraft:flat` | plains | no |
+| live | `minecraft:normal` | - | yes |
+
+The dev world is **superflat** - bedrock, dirt, dirt, grass. It generates in
+seconds and gives a clean canvas for testing builds and mechanics, without
+villages or terrain in the way.
+
+These are substituted into the `minecraft/server.properties` template, so
+changing a world's type is an ordinary commit and push.
+
+**Important:** `level-type` and `generator-settings` are read only when the
+world directory is first created. Changing them later does nothing to a
+world that already exists - the generator settings live inside the world
+save itself. To apply a change you have to remove the world directory so
+the server generates a fresh one:
+
+```sh
+# on the server, with the server stopped
+sudo rm -rf /opt/crafty/servers/<dev-server-id>/world
+make mc-restart-dev
+```
+
+The live world is never touched this way.
 
 ### Memory allocation
 
@@ -496,16 +504,15 @@ browser, then copy that file across.
 │   └── src/                       bot source
 ├── minecraft/                     version-controlled server config
 │   ├── server.properties          template (@SERVER_PORT@ filled per env)
-│   ├── modpack/                   the modpack: mods, hashes, config
-│   ├── env/dev/env.conf           DEV server id, port, MC and loader
-│   ├── env/live/env.conf          LIVE server id, port, MC and loader
-│   └── env/*/jvm_args.txt         per-env heap size
+│   ├── config/                    NeoForge settings
+│   ├── defaultconfigs/
+│   ├── env/dev/env.conf           DEV server id and port
+│   ├── env/live/env.conf          LIVE server id and port
+│   └── mods/mods.manifest         the mod list
 ├── scripts/
 │   ├── backup.sh                  rclone snapshot of the live world -> Drive
 │   ├── check.sh                   no secrets / no huge files / ignore rules
 │   ├── crafty.sh                  Crafty panel API: start/stop/restart
-│   ├── modpack.py                 add/list/install/build/bump the modpack
-│   ├── publish-modpack.py         publish the modpack to Modrinth
 │   ├── deploy-minecraft.sh        apply minecraft/ config to a server
 │   ├── deploy.sh                  repo -> a dev or live environment
 │   ├── install-backup-timer.sh    schedule backup.sh via systemd

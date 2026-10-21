@@ -314,31 +314,24 @@ if [ -d "$PACK_SRC/server-overrides" ]; then
 		"$PACK_SRC/server-overrides/" "$TARGET/"
 fi
 
-# The settings we want for mods that write their own config on the server
-# - LuckPerms, Open Parties and Claims. These are merged into the config
-# the mod generated rather than replacing it, so the repo does not have
-# to carry a copy of the mod's defaults.
-SERVER_CONFIG_SRC="$MC_SRC/server-config"
-if [ -d "$SERVER_CONFIG_SRC" ]; then
-	for overrides in "$SERVER_CONFIG_SRC"/*.toml; do
-		[ -f "$overrides" ] || continue
-		name=$(basename "$overrides")
-		CURRENT_CFG=$(mktemp)
-		merged=$(mktemp)
-		sudo cat "$TARGET/config/$name" > "$CURRENT_CFG" 2>/dev/null || true
-		if python3 "$REPO_ROOT/scripts/server-config.py" merge \
-			"$overrides" "$CURRENT_CFG" "$merged"; then
-			if cmp -s "$merged" "$CURRENT_CFG"; then
-				echo "    $name unchanged"
-			else
-				echo "    $name changed - updating"
-				sudo cp "$merged" "$TARGET/config/$name"
-				sudo chown opc:root "$TARGET/config/$name" 2>/dev/null || true
-			fi
-		fi
-		rm -f "$CURRENT_CFG" "$merged"
-	done
-fi
+# The settings we want for mods that write their own config on the
+# server - LuckPerms, Open Parties and Claims, Simple Voice Chat. These
+# are merged into the config the mod generated rather than replacing it,
+# so the repo does not have to carry a copy of the mod's defaults.
+#
+# "minecraft/server-config" is shared by both environments;
+# "minecraft/env/<env>/server-config" is that environment's own, applied
+# on top. The per-environment one exists for things that have to differ,
+# like the voice chat port - the dev and live servers run in the same
+# container and cannot both have the same UDP port.
+for overrides in "$MC_SRC/server-config" "$MC_SRC/env/$ENV/server-config"; do
+	[ -d "$overrides" ] || continue
+	echo "    applying $(basename "$overrides") overrides"
+	# sudo, because the config directory belongs to the server user and
+	# the deploy does not.
+	sudo python3 "$REPO_ROOT/scripts/server-config.py" merge \
+		"$overrides" "$TARGET/config" || true
+done
 
 # ---------------------------------------------------------------------------
 # 3. Install the server-side mods

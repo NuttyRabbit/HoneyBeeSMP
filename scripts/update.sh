@@ -2,7 +2,7 @@
 # update.sh — pull, check and deploy. The entry point for CI.
 #
 # This is what the GitHub Actions workflow runs on the server after a push.
-# It is also useful by hand.
+# It is also used by the polling backstop (scripts/autodeploy.sh).
 #
 #     ./scripts/update.sh <dev|live> [web|bot|minecraft|all] [--restart]
 #
@@ -33,15 +33,21 @@ live) BRANCH=main ;;
 	;;
 esac
 
-# A lock, so the systemd timer and a GitHub Actions run never deploy at
-# the same time. Both switch this working copy to a different branch, so
-# running them together would race. Whichever gets the lock first does the
-# work; the other waits for it and then finds nothing to do.
-LOCK=/var/lock/honeybeesmp-deploy-$ENV.lock
+# A lock, so that two deploys never run at the same time.
+#
+# The lock is GLOBAL, not per-environment, and that matters: there is only
+# one working copy, and a dev deploy checks out "develop" while a live
+# deploy checks out "main". If they ran together they would fight over
+# the checkout and could deploy the wrong branch to the wrong server.
+#
+# The descriptor is closed first, so that a caller which already holds
+# this lock (autodeploy.sh) does not deadlock against its own child.
+exec 9>&-
+LOCK=/var/lock/honeybeesmp-deploy.lock
 if ! exec 9>"$LOCK" 2>/dev/null; then
-	exec 9>"/tmp/honeybeesmp-deploy-$ENV.lock"
+	exec 9>"/tmp/honeybeesmp-deploy.lock"
 fi
-if ! flock -w 300 9; then
+if ! flock -w 600 9; then
 	echo "timed out waiting for the deploy lock" >&2
 	exit 1
 fi
@@ -53,6 +59,17 @@ current=$(git rev-parse --abbrev-ref HEAD)
 if [ "$current" != "$BRANCH" ]; then
 	echo "    switching from $current to $BRANCH"
 	git checkout "$BRANCH"
+fi
+
+# A dirty working tree would stop the pull ("local changes would be
+# overwritten"). That happens if someone edits files on the server
+# directly. Stash them before pulling, so the deploy is never blocked.
+STASHED=0
+if [ -n "$(git status --porcelain)" ]; then
+	echo "    working tree has local changes - stashing them"
+	if git stash push --include-untracked -m "autodeploy $(date -u +%Y%m%d-%H%M%S)" >/dev/null 2>&1; then
+		STASHED=1
+	fi
 fi
 
 echo "==> pulling from origin"
@@ -77,5 +94,15 @@ sh "$REPO_ROOT/scripts/deploy.sh" "$ENV" "$TARGET" $RESTART
 echo
 echo "==> reloading nginx"
 sudo nginx -t && sudo systemctl reload nginx
+
+# Put back anything we stashed. The deployed copy is regenerated from the
+# repo, so restoring is only to avoid surprising whoever was editing.
+if [ "$STASHED" = "1" ]; then
+	echo
+	echo "==> restoring stashed local changes"
+	git stash pop >/dev/null 2>&1 || {
+		echo "    could not restore automatically; your changes are in 'git stash list'"
+	}
+fi
 
 echo "update complete ($ENV)"

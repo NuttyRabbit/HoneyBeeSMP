@@ -9,8 +9,9 @@
 # the GitHub UI); this catches anything the workflow misses, and keeps
 # working if Actions is disabled, misconfigured, or out of minutes.
 #
-# Both paths run the same scripts/update.sh, and update.sh takes a lock, so
-# whichever gets there first does the work and the other does nothing.
+# Both paths run the same scripts/update.sh, which takes a global lock, so
+# whichever gets there first does the work and the other finds nothing to
+# do. They cannot race over the working copy's branch.
 #
 # Usage:  ./scripts/autodeploy.sh <dev|live>
 # Exit:   0 if nothing to do or a deploy succeeded, non-zero on failure.
@@ -30,33 +31,27 @@ live) BRANCH=main ;;
 	;;
 esac
 
-# A lock so the timer and a GitHub Actions run never deploy at the same
-# time. If the lock is held, the other path is already deploying, so there
-# is nothing for us to do.
-LOCK=/var/lock/honeybeesmp-deploy-$ENV.lock
-exec 9>"$LOCK" 2>/dev/null || exec 9>"/tmp/honeybeesmp-deploy-$ENV.lock"
-if ! flock -n 9; then
-	echo "another deploy is already running for '$ENV'; skipping"
-	exit 0
-fi
-
-# Fetch quietly; a failure here (network blip) is not worth failing over.
+# Fetch quietly; a network blip is not worth failing over.
 git fetch --quiet origin "$BRANCH" 2>/dev/null || {
 	echo "could not fetch origin/$BRANCH; will try again next minute"
 	exit 0
 }
 
-LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse "origin/$BRANCH" 2>/dev/null || echo "")
-
 if [ -z "$REMOTE" ]; then
 	echo "origin/$BRANCH not found"
 	exit 0
 fi
 
-if [ "$LOCAL" = "$REMOTE" ]; then
-	# Up to date. But make sure the working copy is on the right branch
-	# and clean, so the next real deploy is not blocked.
+# What the working copy currently has. It may be on the other branch, so
+# compare against that branch's remote rather than against HEAD.
+LOCAL=$(git rev-parse "origin/$BRANCH" 2>/dev/null || echo "")
+DEPLOYED=$(git rev-parse HEAD 2>/dev/null || echo "")
+
+# Is the branch we deploy from ahead of what is checked out?
+if git diff --quiet "origin/$BRANCH" HEAD 2>/dev/null; then
+	# Same tree - nothing to deploy. Make sure the working copy is on the
+	# right branch so the next deploy is not blocked by a stale checkout.
 	current=$(git rev-parse --abbrev-ref HEAD)
 	if [ "$current" != "$BRANCH" ]; then
 		git checkout --quiet "$BRANCH" 2>/dev/null || true
@@ -64,5 +59,8 @@ if [ "$LOCAL" = "$REMOTE" ]; then
 	exit 0
 fi
 
-echo "==> new commit on $BRANCH: $(git rev-parse --short "$LOCAL") -> $(git rev-parse --short "$REMOTE")"
+echo "==> new commit on $BRANCH: $(git rev-parse --short "$DEPLOYED") -> $(git rev-parse --short "$REMOTE")"
+
+# update.sh takes the deploy lock itself. We must not hold it here, or the
+# child would inherit the held descriptor and block waiting for itself.
 sh "$REPO_ROOT/scripts/update.sh" "$ENV" all

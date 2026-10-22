@@ -69,13 +69,13 @@ lp "group admin parent add mod"
 
 # --- Claim limits ------------------------------------------------------------
 # These override the base limits in the Open Parties and Claims config, per
-# group. The base is 400 chunks and 12 chunk loaders; "trusted" roughly
+# group. The base is 400 chunks and 8 chunk loaders; "trusted" roughly
 # doubles the land and the loaders, which is what a player who has been
 # around a while usually wants.
 #
-# A chunk is 16x16 blocks, so 800 chunks is about 7,000 blocks square.
+# A chunk is 16x16 blocks, so 800 chunks is about 450 blocks square.
 lp "group trusted permission set xaero.pac_max_claims 800"
-lp "group trusted permission set xaero.pac_max_forceloads 24"
+lp "group trusted permission set xaero.pac_max_forceloads 16"
 lp "group trusted permission set xaero.pac_max_claiming_anchors 5"
 lp "group trusted permission set xaero.pac_claiming_anchor_range 32"
 lp "group trusted permission set xaero.pac_max_player_groups 10"

@@ -33,8 +33,11 @@ claimBonusForPartyOwner = 0
 
 # How many chunks a player may keep loaded. This is the one that costs
 # server performance, so it is kept modest: a sorting array needs about
-# six, and a party pools them.
-maxPlayerClaimForceloads = 12
+# six, so 8 leaves that plus a little headroom. Twenty players all at the
+# cap is 160 chunks ticking around the clock, which is the figure that
+# matters - player-loaded chunks stop when the player leaves, but
+# forceloaded ones never do.
+maxPlayerClaimForceloads = 8
 
 # How many claims a player may grow from an anchor, and how far an anchor
 # may reach. Anchors are how a claim grows past the size of one command.

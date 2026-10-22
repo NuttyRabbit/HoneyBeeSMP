@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Server rules - HoneyBeeSMP</title>
+  <meta name="description" content="The HoneyBeeSMP server rules: claims and forceloads, factory performance, duplication and trading, fair play, and chat.">
+  <meta name="theme-color" content="#0b0906">
+  <meta property="og:title" content="Server rules - HoneyBeeSMP">
+  <meta property="og:description" content="The HoneyBeeSMP server rules: claims and forceloads, factory performance, duplication and trading, fair play, and chat.">
+  <meta property="og:type" content="website">
+  <link rel="canonical" href="https://honeybeesmp.co.uk/rules">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true"></div>
+
+  <header class="nav">
+    <div class="wrap">
+      <a class="brand" href="#top">
+        <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <path d="M16 2.5 28 9v14L16 29.5 4 23V9z" stroke="#ffc107" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M16 10.5 22 14v7l-6 3.5L10 21v-7z" fill="#ffc107" fill-opacity=".22" stroke="#ffc107" stroke-width="1.2" stroke-linejoin="round"/>
+        </svg>
+        <span>Honey<span class="bee">Bee</span>SMP</span>
+      </a>
+      <nav>
+        <a href="/#join">Get started</a>
+        <a href="/mods">The pack</a>
+        <a href="/rules" aria-current="page">Rules</a>
+      </nav>
+      <a class="btn ghost small" href="https://discord.gg/TsBmAGPtMG">Discord</a>
+    </div>
+  </header>
+
+  <main id="top">
+<section class="section wrap" id="rules">
+<p class="eyebrow">Playing by the rules</p>
+      <h1>Server rules</h1>
+      <p class="lede">
+        These are the rules for playing on the server. The rules for the
+        Discord are in <code>#rules</code> over there.
+      </p>
+
+      <div class="rules-layout">
+        <aside class="rules-toc">
+          <h4>On this page</h4>
+          <ol>
+            <li><a href="#rule-land">Building and land</a></li>
+            <li><a href="#rule-factories">Factories and performance</a></li>
+            <li><a href="#rule-items">Items, storage and trading</a></li>
+            <li><a href="#rule-fair">Playing fair</a></li>
+            <li><a href="#rule-chat">Chat and voice</a></li>
+          </ol>
+        </aside>
+
+        <div>
+          <div class="rule-group" id="rule-land">
+            <h3>Building and land</h3>
+            <ol class="rule-list">
+              <li><strong>Claim what you build on.</strong> The server uses Open Parties and Claims, so nothing of yours can be touched once you have claimed it. Open your map &mdash; <code>M</code> by default &mdash; and claim chunks from there, and you get <strong>400 chunks</strong> &mdash; about 320 blocks square, which is a big Create base.</li>
+              <li><strong>You have to be near the land to claim it.</strong> You cannot reach across the map and claim somebody's field. Stay within <strong>5 blocks</strong> of what you are claiming.</li>
+              <li><strong>One claim action covers 121 chunks</strong> (11&times;11). To go bigger, use claiming anchors: you get <strong>3</strong>, and each one reaches <strong>16 blocks</strong> further.</li>
+              <li><strong>Forceload at most 8 chunks.</strong> This is the limit that keeps the server running smoothly, and it is the one we enforce hardest. A sorting array needs about six, so 8 is that plus a little headroom. Forceloaded chunks tick whether or not you are online, which is why they cost far more than the chunks you load by just standing there &mdash; and why going over your limit is the most common cause of the server lagging for everyone.</li>
+              <li><strong>Claims last a year.</strong> After that the land can be claimed by whoever is standing on it, so come back to it now and then.</li>
+              <li><strong>Parties share a claim.</strong> Up to <strong>8 members</strong> and <strong>8 allies</strong>, and you can have <strong>5 invites</strong> out at a time. Every extra member in the party adds <strong>100 chunks</strong> to the shared claim.</li>
+              <li><strong>Use groups for finer control.</strong> Inside a claim you can set up <strong>5 groups</strong> with <strong>64 spaces</strong> each, so you can give some people your storage and keep other areas to yourself.</li>
+              <li><strong>Do not grief.</strong> Breaking blocks, placing blocks, opening chests, or touching somebody else's machines inside their claim is bannable.</li>
+            </ol>
+          </div>
+
+          <div class="rule-group" id="rule-factories">
+            <h3>Factories and performance</h3>
+            <ol class="rule-list">
+              <li><strong>Do not forceload more than your limit.</strong> A factory that is too big for the chunks it loads will slow the whole server down, and it will be your build that gets rolled back.</li>
+              <li><strong>Build big machines away from spawn.</strong> Big Cannons, Create additions and anything that runs constantly should not be within a few hundred blocks of spawn.</li>
+              <li><strong>Turn off machines you are not using.</strong> A sorting array with no inputs still ticks. Use the lever or the Create gauge to stop it when you are done.</li>
+              <li><strong>If the server is lagging, check your own base first.</strong> It is almost always an over-forceloaded factory. We have <strong>Spark</strong> on the server, and staff can profile it for you.</li>
+              <li><strong>Do not build lag machines.</strong> Constant redstone, machine spam and chunk loaders beyond your limit are all grounds for a removal.</li>
+            </ol>
+          </div>
+
+          <div class="rule-group" id="rule-items">
+            <h3>Items, storage and trading</h3>
+            <ol class="rule-list">
+              <li><strong>Do not duplicate items.</strong> Not with any duplication glitch, and not with storage that lets you hold more of something than the machine that made it. This includes Sophisticated Storage and Backpacks, and Create Compression. Duplicated items are removed, and the people who take them are removed with them.</li>
+              <li><strong>Do not exploit bugs.</strong> If you find a dupe, a money glitch or something broken, tell us in <code>#bugs</code> and do not profit from it. Reporting it is worth more to you than using it.</li>
+              <li><strong>Numismatics is the server's currency.</strong> Trading with other players is fine and encouraged. Scamming, chargebacks and exploiting the currency are not.</li>
+              <li><strong>Do not hoard to the point of breaking the economy.</strong> If you are sitting on a mountain of an item that other people need, that is a conversation with the staff, not a ban.</li>
+              <li><strong>Waystones and trains are how you get around, and visiting is the point.</strong> Teleporting to another player's build is exactly what a co-op server is for, so do it freely &mdash; and share a public waystone network if you want people to find you. Just do not place a waystone inside somebody else's claim without asking, and do not use teleports to get around claim protection.</li>
+            </ol>
+          </div>
+
+          <div class="rule-group" id="rule-fair">
+            <h3>Playing fair</h3>
+            <ol class="rule-list">
+              <li><strong>No x-ray or ore ESP.</strong> AntiXray is on to protect everyone's underground builds. Even a texture pack that shows ores through stone is cheating.</li>
+              <li><strong>No hacks, macros or automation.</strong> Auto-clickers, reach hacks, combat bots, flying, and anything that plays the game for you are all cheating. Flight is not enabled on the server at all.</li>
+              <li><strong>No exploiting the mods.</strong> Create, Numismatics and the rest of the pack are here to build with. Using them to make an unfair advantage is cheating, not clever.</li>
+              <li><strong>One account each.</strong> Do not share accounts, buy accounts, or use alts to get around a ban.</li>
+              <li><strong>Real accounts only.</strong> The server is in online mode, so cracked clients will not connect.</li>
+              <li><strong>PvP is off.</strong> The server is for building, not fighting. There is no way to hurt another player, and trying to work around that is a ban.</li>
+            </ol>
+          </div>
+
+          <div class="rule-group" id="rule-chat">
+            <h3>Chat and voice</h3>
+            <ol class="rule-list">
+              <li><strong>Be decent to each other.</strong> No harassment, no slurs, no bullying, and no arguing in chat.</li>
+              <li><strong>Keep it in English and on topic.</strong> No spam, no advertising other servers, and no unsolicited messages to people you have not met.</li>
+              <li><strong>Look after other people's information.</strong> Do not post private messages, phone numbers, addresses or anything else that is not yours to share.</li>
+              <li><strong>Use the right channel.</strong> Questions go in <code>#help</code>, bugs in <code>#bugs</code>, ideas in <code>#suggestions</code>. In game, keep factory talk out of general chat.</li>
+              <li><strong>Voice chat is proximity based.</strong> Keep it civil and keep it suitable for everyone. There is voice chat in game and in the Discord, and both follow the same rules.</li>
+              <li><strong>NoChatReports is installed</strong>, so chat is not reported to Mojang. That means we rely on players telling us when something is wrong, so please do.</li>
+            </ol>
+          </div>
+
+          <p class="aside">
+            <strong>Getting something wrong happens.</strong> If you break a rule by accident, say so and we will sort it out. Bans are for repeat offences and for the serious stuff, and staff can lift them. If you think a rule here is wrong, or you want it changed, post it in
+            <code>#suggestions</code> &mdash; this page is meant to be argued with.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot">
+      <span>&copy; 2026 HoneyBeeSMP &middot; play.honeybeesmp.co.uk</span>
+      <span class="foot-links">
+        <a href="https://modrinth.com/server/honeybeesmp">Modrinth</a>
+        <a href="https://discord.gg/TsBmAGPtMG">Discord</a>
+        <a href="/rules">Server rules</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/cookies">Cookies</a>
+        <a href="mailto:admin@honeybeesmp.co.uk">Contact</a>
+      </span>
+    </div>
+  </footer>
+  <div class="cookie-banner" id="cookie-banner" role="region" aria-label="Cookie notice" hidden>
+    <p>
+      This site sets <strong>no cookies</strong> and runs no tracking. It saves one
+      thing in your browser: that you have read this.
+      <a href="/cookies">Cookie policy</a>.
+    </p>
+    <button class="btn primary small" type="button" data-cookie-dismiss>Got it</button>
+  </div>
+  <script src="/assets/site.js" defer></script>
+</body>
+</html>

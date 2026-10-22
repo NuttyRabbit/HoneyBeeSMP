@@ -449,6 +449,15 @@
     .foot-links a { color: var(--ink-2); text-decoration: none; }
     .foot-links a:hover { color: var(--amber); }
 
+    /* The Minecraft disclaimer that Mojang's usage guidelines ask for.
+       Quiet, but present on every page. */
+    .disclaimer {
+      margin: 1.4rem 0 0;
+      max-width: 52rem;
+      font-size: .82rem;
+      line-height: 1.5;
+    }
+
     /* --- narrow screens ------------------------------------------------ */
     @media (max-width: 52rem) {
       .nav .wrap {

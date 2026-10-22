@@ -114,14 +114,19 @@ for srv in $MINECRAFT_SERVERS; do
 	# per-server destination explicitly first.
 	mkdir -p "$MC_STAGE/$srv"
 	# Exclude things that are large and regenerable, or actively written.
+	# BlueMap's rendered map is derived data: it is rebuilt from the world
+	# and the config, it is gigabytes, and it changes every time somebody
+	# builds, so backing it up costs space on every run and restores
+	# nothing that could not be re-rendered.
 	sudo rsync -a \
 		--exclude='logs/' \
 		--exclude='crash-reports/' \
 		--exclude='*.log' \
 		--exclude='session.lock' \
+		--exclude='bluemap/' \
 		"$SERVERS_DIR/$srv/" "$MC_STAGE/$srv/" 2>&1 | tail -2 | tee -a "$LOG" >&2 || \
 	rsync -a --exclude='logs/' --exclude='crash-reports/' --exclude='*.log' \
-		--exclude='session.lock' \
+		--exclude='session.lock' --exclude='bluemap/' \
 		"$SERVERS_DIR/$srv/" "$MC_STAGE/$srv/" 2>&1 | tail -2 | tee -a "$LOG" >&2
 done
 [ "$found" = "1" ] || { log "FATAL: no configured servers exist"; exit 1; }

@@ -208,6 +208,39 @@ python3 scripts/modpack.py verify /opt/crafty/servers/<id>/mods
 
 4. Test it, then merge to `main` and push.
 
+### Testing the client side
+
+There is no separate dev pack: `develop` **is** the dev pack. To get its
+client half, build it and import the file rather than publishing it.
+
+```sh
+make devpack            # writes /tmp/HoneyBeeSMP-dev.mrpack, from develop only
+```
+
+Import that in Prism (**Add Instance → Import from file**) as its own
+instance and connect it to `dev.honeybeesmp.co.uk:25565`. Nothing goes
+to Modrinth, so broken builds stay private.
+
+- A mod that is **client-only** (HUD, rendering, minimap) does not need
+  to be on the server at all. Put the jar in that instance's `mods/`
+  folder and join the dev server; add it to the pack once it works.
+- A mod with **both halves** (blocks, items, packets) needs the same
+  build on both sides. `modpack.py add` puts it in the pack, the deploy
+  puts the server half on dev, and `make devpack` gives the client the
+  matching half.
+- While iterating, drop new jars into the dev instance's `mods/` folder
+  and let the deploy replace the server's copy; rebuild with `make
+  devpack` when you want a clean, reproducible check.
+
+Never put jars directly in the dev server's `mods/` folder. The deploy
+rsyncs that directory with `--delete` from the pack, so anything placed
+there disappears on the next deploy and takes your afternoon with it.
+
+`make devpack` refuses to run outside `develop`, and warns when the pack
+is uncommitted or `develop` is unpushed: in either case the client would
+be running something the dev server does not have, which surfaces as a
+confusing mod mismatch rather than as an error.
+
 ### Removing a mod
 
 Remove its entry from `modrinth.index.json` and push. The deploy deletes

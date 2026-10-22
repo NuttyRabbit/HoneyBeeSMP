@@ -314,6 +314,19 @@ if [ -d "$PACK_SRC/server-overrides" ]; then
 		"$PACK_SRC/server-overrides/" "$TARGET/"
 fi
 
+# The same thing, per environment, applied on top. The config files here
+# are complete HOCON files rather than key/value patches, which the
+# server-config merge cannot express, so they overwrite whatever is there.
+# This is how dev avoids binding the same web-server port as live: both
+# servers share one network namespace.
+if [ -d "$MC_SRC/env/$ENV/server-overrides" ]; then
+	echo "    syncing env/$ENV/server-overrides -> (server root)"
+	sudo rsync -a \
+		--no-group --no-perms --omit-dir-times \
+		--chown=opc:root \
+		"$MC_SRC/env/$ENV/server-overrides/" "$TARGET/"
+fi
+
 # The settings we want for mods that write their own config on the
 # server - LuckPerms, Open Parties and Claims, Simple Voice Chat. These
 # are merged into the config the mod generated rather than replacing it,

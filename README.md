@@ -9,6 +9,7 @@ works for everyone else too.
 | **Play on** | `play.honeybeesmp.co.uk` (port 25566) |
 | **On Modrinth** | [modrinth.com/server/honeybeesmp](https://modrinth.com/server/honeybeesmp) |
 | **Website** | https://honeybeesmp.co.uk |
+| **Live map** | https://map.honeybeesmp.co.uk |
 | **Server panel** | https://panel.honeybeesmp.co.uk |
 | **Source** | https://github.com/NuttyRabbit/HoneyBeeSMP |
 

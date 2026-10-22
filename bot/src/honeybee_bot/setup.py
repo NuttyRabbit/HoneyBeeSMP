@@ -175,6 +175,13 @@ def category_specs() -> list[CategorySpec]:
             "Community",
             [
                 ChannelSpec("general", "text", "Anything goes.", read=everyone, write=everyone),
+                ChannelSpec(
+                    "minecraft-chat",
+                    "text",
+                    "In-game chat, bridged both ways. What you say here appears in the game.",
+                    read=everyone,
+                    write=everyone,
+                ),
                 ChannelSpec("media", "text", "Screenshots and videos.", read=everyone, write=everyone),
                 ChannelSpec("builds", "text", "Show off what you have built.", read=everyone, write=everyone),
             ],
@@ -389,6 +396,7 @@ SERVER_INFO = """**How to play on HoneyBeeSMP**
 
 - **Server address:** `play.honeybeesmp.co.uk` (port `25566`)
 - **Website:** https://honeybeesmp.co.uk
+- **Live map:** https://map.honeybeesmp.co.uk
 - **Discord:** https://discord.gg/TsBmAGPtMG
 - **Server rules:** https://honeybeesmp.co.uk/rules
 

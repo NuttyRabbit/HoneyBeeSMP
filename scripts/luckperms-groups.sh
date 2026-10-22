@@ -74,12 +74,33 @@ lp "group admin parent add mod"
 # around a while usually wants.
 #
 # A chunk is 16x16 blocks, so 800 chunks is about 450 blocks square.
-lp "group trusted permission set xaero.pac_max_claims 800"
-lp "group trusted permission set xaero.pac_max_forceloads 16"
-lp "group trusted permission set xaero.pac_max_claiming_anchors 5"
-lp "group trusted permission set xaero.pac_claiming_anchor_range 32"
-lp "group trusted permission set xaero.pac_max_player_groups 10"
-lp "group trusted permission set xaero.pac_player_group_space 128"
+#
+# These are *meta* values, not permissions. A LuckPerms permission holds
+# only true or false, so "permission set <node> 800" quietly stores "true"
+# and takes "800" for a context name; the mod then finds no number and
+# falls back to the config default. Open Parties and Claims reads these
+# through the meta lookup, hence "meta set".
+#
+# The unset lines clear nodes that an older version of this script left
+# behind. They are harmless when there is nothing to remove, and they mean
+# a server that ran the broken version repairs itself when this runs.
+for node in \
+	xaero.pac_max_claims \
+	xaero.pac_max_forceloads \
+	xaero.pac_max_claiming_anchors \
+	xaero.pac_claiming_anchor_range \
+	xaero.pac_max_player_groups \
+	xaero.pac_player_group_space
+do
+	lp "group trusted permission unset $node"
+done
+
+lp "group trusted meta set xaero.pac_max_claims 800"
+lp "group trusted meta set xaero.pac_max_forceloads 16"
+lp "group trusted meta set xaero.pac_max_claiming_anchors 5"
+lp "group trusted meta set xaero.pac_claiming_anchor_range 32"
+lp "group trusted meta set xaero.pac_max_player_groups 10"
+lp "group trusted meta set xaero.pac_player_group_space 128"
 
 # --- Moderator powers --------------------------------------------------------
 # The Open Parties and Claims moderator mode: see and moderate other

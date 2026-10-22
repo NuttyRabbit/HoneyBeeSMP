@@ -222,7 +222,7 @@ def category_specs() -> list[CategorySpec]:
 RULES = """**HoneyBeeSMP Discord rules**
 
 These are the rules for the Discord. The rules for the Minecraft server
-itself are on the website: https://honeybeesmp.co.uk/#rules
+itself are on the website: https://honeybeesmp.co.uk/rules
 
 1. Be kind. No harassment, no slurs, no bullying.
 2. Keep chat in English, and keep it on topic.
@@ -390,7 +390,7 @@ SERVER_INFO = """**How to play on HoneyBeeSMP**
 - **Server address:** `play.honeybeesmp.co.uk` (port `25566`)
 - **Website:** https://honeybeesmp.co.uk
 - **Discord:** https://discord.gg/TsBmAGPtMG
-- **Server rules:** https://honeybeesmp.co.uk/#rules
+- **Server rules:** https://honeybeesmp.co.uk/rules
 
 **Getting the modpack**
 
@@ -398,7 +398,8 @@ The server runs a modpack, so you need it installed before you join:
 
 1. Install [Prism Launcher](https://prismlauncher.org) or the
    [Modrinth App](https://modrinth.com/app).
-2. Point it at the HoneyBeeSMP server on Modrinth and install it.
+2. Point it at [HoneyBeeSMP on
+   Modrinth](https://modrinth.com/server/honeybeesmp) and install it.
 3. Launch the profile it creates and connect.
 
 The launcher keeps the pack up to date for you.
@@ -407,6 +408,9 @@ The launcher keeps the pack up to date for you.
 
 The server is Create and automation focused, with a custom world, claims
 and parties, and proximity voice chat.
+
+Open the map with `M` and claim the chunks where you build. A claim stops
+other players from breaking your build, and it can be expanded later.
 """
 
 

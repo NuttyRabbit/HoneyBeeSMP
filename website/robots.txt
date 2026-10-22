@@ -1,0 +1,11 @@
+# HoneyBeeSMP - https://honeybeesmp.co.uk/
+#
+# Everything here is meant to be found. The one exception is the status
+# endpoint: it is a live JSON feed for the site, not a page, and there is
+# nothing useful in a search index for it.
+
+User-agent: *
+Allow: /
+Disallow: /status.json
+
+Sitemap: https://honeybeesmp.co.uk/sitemap.xml

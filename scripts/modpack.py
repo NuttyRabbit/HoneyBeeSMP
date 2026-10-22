@@ -259,6 +259,11 @@ def cmd_add(args) -> int:
             # it is really a server tool - Chunky pre-generates the world,
             # and there is nothing for a player to do with it.
             entry["env"]["client"] = "unsupported"
+            # Plenty of server tools leave both sides unset on Modrinth
+            # ("unknown"), which reads as "unsupported" here and would
+            # mean the server never installs the mod we asked for. A mod
+            # named as a server tool belongs on the server.
+            entry["env"]["server"] = "required"
         title = project.get("title", slug)
 
         if entry["path"] in known:

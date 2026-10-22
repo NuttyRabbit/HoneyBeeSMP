@@ -29,7 +29,7 @@ LIVE_SERVER := 119045e1-1fac-41a0-83c0-5e2d85ce4c78
         mc-status mc-status-dev mc-restart mc-restart-dev mc-cmd \
         backup backup-log update update-dev \
         modpack modpack-add modpack-publish modpack-bump modpack-status modpack-verify \
-        whitelist
+        devpack whitelist
 
 help: ## Show this help
 	@echo "HoneyBeeSMP — available targets:"
@@ -149,6 +149,26 @@ modpack-status: ## Show the Modrinth project and its latest version
 
 modpack-verify: ## Check the live server's mods against the pack
 	@python3 "$(REPO_DIR)/scripts/modpack.py" verify /opt/crafty/servers/119045e1-1fac-41a0-83c0-5e2d85ce4c78/mods
+
+devpack: ## Build the client pack from develop: import /tmp/HoneyBeeSMP-dev.mrpack in Prism
+	@branch=$$(git -C "$(REPO_DIR)" rev-parse --abbrev-ref HEAD); \
+	if [ "$$branch" != "develop" ]; then \
+		echo "devpack: you are on '$$branch', not 'develop'." >&2; \
+		echo "devpack: the dev pack is built from develop, so run 'git checkout develop' first." >&2; \
+		exit 1; \
+	fi; \
+	if [ -n "$$(git -C "$(REPO_DIR)" status --porcelain -- minecraft/modpack)" ]; then \
+		echo "devpack: warning: uncommitted pack changes." >&2; \
+		echo "devpack: the client will get them, the dev server will not until you push." >&2; \
+	fi; \
+	if [ "$$(git -C "$(REPO_DIR)" rev-parse develop)" != "$$(git -C "$(REPO_DIR)" rev-parse origin/develop 2>/dev/null)" ]; then \
+		echo "devpack: warning: develop is not pushed." >&2; \
+		echo "devpack: push it, or rebuild, otherwise the server half will be a different version." >&2; \
+	fi
+	@sh "$(REPO_DIR)/scripts/build-modpack.sh" /tmp/HoneyBeeSMP-dev.mrpack
+	@echo
+	@echo "Import /tmp/HoneyBeeSMP-dev.mrpack into Prism as a separate instance,"
+	@echo "then connect it to dev.honeybeesmp.co.uk:25565."
 
 whitelist: ## Show who may join an environment: make whitelist ENV=dev
 	@python3 "$(REPO_DIR)/scripts/whitelist.py" list $${ENV:-dev}

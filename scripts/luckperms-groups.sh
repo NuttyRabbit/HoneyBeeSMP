@@ -75,26 +75,20 @@ lp "group admin parent add mod"
 #
 # A chunk is 16x16 blocks, so 800 chunks is about 450 blocks square.
 #
-# These are *meta* values, not permissions. A LuckPerms permission holds
-# only true or false, so "permission set <node> 800" quietly stores "true"
-# and takes "800" for a context name; the mod then finds no number and
-# falls back to the config default. Open Parties and Claims reads these
-# through the meta lookup, hence "meta set".
+# These are *meta* values, not permissions. Open Parties and Claims reads
+# them through LuckPerms' meta lookup, because a LuckPerms permission only
+# holds true or false. An older version of this script used
+# "permission set <node> 800", which quietly stored "true" and took the
+# number for a context name - the server log shows "Set <node> to true for
+# trusted in context server=800" - so the mod found no number, fell back to
+# the config default, and trusted players never got the extra land.
 #
-# The unset lines clear nodes that an older version of this script left
-# behind. They are harmless when there is nothing to remove, and they mean
-# a server that ran the broken version repairs itself when this runs.
-for node in \
-	xaero.pac_max_claims \
-	xaero.pac_max_forceloads \
-	xaero.pac_max_claiming_anchors \
-	xaero.pac_claiming_anchor_range \
-	xaero.pac_max_player_groups \
-	xaero.pac_player_group_space
-do
-	lp "group trusted permission unset $node"
-done
-
+# If a server still has those old nodes, remove them with the context
+# spelled out, because "permission unset <node>" on its own only touches
+# the global context:
+#
+#     luckperms group trusted permission unset xaero.pac_max_claims server=800
+#     luckperms group trusted permission info
 lp "group trusted meta set xaero.pac_max_claims 800"
 lp "group trusted meta set xaero.pac_max_forceloads 16"
 lp "group trusted meta set xaero.pac_max_claiming_anchors 5"

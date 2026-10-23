@@ -310,6 +310,9 @@ def cmd_add(args) -> int:
 
     index = load_index()
     known = existing_paths(index)
+    known_projects = {
+        project_id(entry) for entry in index.get("files", []) if project_id(entry)
+    }
     added = 0
     changed = 0
     queue = list(args.slug)
@@ -334,6 +337,22 @@ def cmd_add(args) -> int:
         seen.add(slug)
 
         project, version = find_version(slug, game, loader_name, loader_version)
+        title = project.get("title", slug)
+        if project.get("id") in known_projects:
+            # The project is already in the pack, possibly at a deliberately
+            # pinned version (LuckPerms is one). Adding a dependency must not
+            # silently replace that pin with the newest build.
+            info(f"  {title}: already in the pack")
+            if project.get("id") in client_needed:
+                for existing in index.get("files", []):
+                    if project_id(existing) != project.get("id"):
+                        continue
+                    if existing["env"].get("client") == "unsupported":
+                        existing["env"]["client"] = "required"
+                        changed += 1
+                        info(f"  {title} is needed by a client mod -> client: required")
+            continue
+
         entry = entry_from_version(project, version)
         if args.server_only and slug in explicit:
             # Modrinth's metadata says this mod is fine on a client, but
@@ -347,7 +366,6 @@ def cmd_add(args) -> int:
             entry["env"]["server"] = "required"
         elif slug in client_needed and entry["env"]["client"] == "unsupported":
             entry["env"]["client"] = "required"
-        title = project.get("title", slug)
 
         if entry["path"] in known:
             info(f"  {title}: already in the pack")
@@ -362,6 +380,7 @@ def cmd_add(args) -> int:
         else:
             index.setdefault("files", []).append(entry)
             known.add(entry["path"])
+            known_projects.add(project.get("id"))
             added += 1
             info(
                 f"  {title} {version.get('version_number')} -> {entry['path']} "

@@ -100,7 +100,7 @@ and try again.
 
 ## What is in the pack
 
-85 mods, chosen to work well together rather than to be the biggest set
+86 mods, chosen to work well together rather than to be the biggest set
 possible.
 
 ### Create and factory building
@@ -184,6 +184,7 @@ extra - the launcher works out which files belong on your machine from the
 pack itself.
 
 - **LuckPerms** - permissions
+- **LPChatPrefix** - shows LuckPerms group prefixes in chat
 - **Open Parties and Claims** - claims, parties and grief protection
 - **Simple Voice Chat** - proximity voice, in game
 - **KubeJS** - server-side scripting

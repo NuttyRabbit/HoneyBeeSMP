@@ -67,6 +67,24 @@ done
 lp "group mod parent add trusted"
 lp "group admin parent add mod"
 
+# --- Chat prefixes -----------------------------------------------------------
+# LPChatPrefix reads the prefix from LuckPerms and puts it in front of the
+# player's name in chat. The config is in the pack at
+# server-overrides/config/lpchatprefix-common.toml.
+#
+# Keep these in Minecraft's legacy colour-code format. LPChatPrefix converts
+# "&" to the section sign itself; MiniMessage tags would be shown literally.
+# The group weights make the most senior group's prefix win over the one it
+# inherits from.
+lp "group default setweight 0"
+lp "group trusted setweight 10"
+lp "group mod setweight 20"
+lp "group admin setweight 30"
+lp "group default meta setprefix &7[Player]&r"
+lp "group trusted meta setprefix &a[Trusted]&r"
+lp "group mod meta setprefix &b[Mod]&r"
+lp "group admin meta setprefix &6[Owner]&r"
+
 # --- Claim limits ------------------------------------------------------------
 # These override the base limits in the Open Parties and Claims config, per
 # group. The base is 400 chunks and 8 chunk loaders; "trusted" roughly

@@ -10,7 +10,7 @@ clicks play gets exactly this pack installed, and is told when it changes.
 
 ## What is in the pack
 
-85 mods, chosen to be a coherent set rather than the biggest one possible.
+86 mods, chosen to be a coherent set rather than the biggest one possible.
 
 ### Create and factory building
 
@@ -42,6 +42,7 @@ skips them and the server still installs them.
 | Mod | Why |
 |---|---|
 | LuckPerms | Permissions. |
+| LPChatPrefix | Shows LuckPerms group prefixes in chat. |
 | Open Parties and Claims | Claims, parties and grief protection. |
 | Simple Voice Chat | Proximity voice. The live server is on 24454, the dev server on 24455 - they run in the same container and cannot share a port. |
 | KubeJS | Server-side scripting. |
@@ -133,7 +134,7 @@ what a player installs - and they can never drift apart.
 The pack also records a SHA-512 hash for every file, so a download that is
 corrupted or tampered with is caught rather than silently installed.
 
-Of the 85 mods, 74 are installed on the server and 68 on players' clients.
+Of the 86 mods, 75 are installed on the server and 68 on players' clients.
 Mods that are on neither, or on both, sit in between - the pack records
 each file's split exactly.
 
@@ -171,7 +172,9 @@ in `server-overrides/` is never sent to players.
 Some server-side mods - LuckPerms, Open Parties and Claims - write their
 own config on first run, with every option and a comment explaining it.
 Copying that file into the repo would mean tracking the mod's defaults,
-which go stale on every update.
+which go stale on every update. LPChatPrefix is the exception: its config
+is tiny and stable, so the complete file is tracked in
+`server-overrides/config/lpchatprefix-common.toml`.
 
 So the repo holds only the settings we want changed:
 
@@ -182,6 +185,22 @@ minecraft/server-config/openpartiesandclaims-server.toml
 `scripts/server-config.py` merges those into the config the mod
 generated, on every deploy. It only replaces keys that are already
 there, and it leaves the rest of the file alone.
+
+### Chat prefixes
+
+Chat names are prefixed from the player's LuckPerms group:
+
+| Group | Prefix |
+|---|---|
+| `default` | `[Player]` in grey |
+| `trusted` | `[Trusted]` in green |
+| `mod` | `[Mod]` in aqua |
+| `admin` | `[Owner]` in gold |
+
+`scripts/luckperms-groups.sh` sets the prefixes and group weights, so a
+senior group wins over the prefix it inherits. The message layout is in
+`server-overrides/config/lpchatprefix-common.toml`: `[Player] Name:
+message`. LPChatPrefix is server-only; players do not need to install it.
 
 ### Client default settings
 
@@ -197,10 +216,22 @@ singleplayer tutorial and warnings:
 - `pauseOnLostFocus:false` - alt-tabbing does not throw up the pause
   menu. The world runs on the server, so this only affects the client.
 
-The file is deliberately partial. Minecraft leaves any key it cannot
-find at its default, so graphics, keybinds, sound and GUI scale stay
-whatever the player's machine and taste need. A pack default that
-overrides a player's keybinds or render distance would be a bug.
+It also moves the handful of mod keybinds that would otherwise collide:
+
+| Action | Default | Pack default |
+|---|---|---|
+| Xaero's Minimap - create waypoint | `B` | `J` |
+| Xaero's Minimap - enlarge map | `Z` | `P` |
+| Corpse - death history | `U` | `L` |
+| Simple Voice Chat - group menu | `G` | `F7` |
+| Simple Voice Chat - mute microphone | `M` | `F9` |
+
+These are defaults only. Existing instances keep their own `options.txt`,
+and every player can change any of them in **Options → Controls →
+Key Binds**. The rest of the file is deliberately partial: Minecraft
+leaves any key it cannot find at its default, so graphics, render
+distance, sound, GUI scale and all other keybinds stay whatever the
+player's machine and taste need.
 
 The `version:3955` line is the 1.21.1 options format. Update it when the
 pack moves to a new Minecraft version.
@@ -310,7 +341,7 @@ follow:
 
 ### A note on the pack's size
 
-85 mods is a lot, and some of them pull in a fair bit underneath - Create
+86 mods is a lot, and some of them pull in a fair bit underneath - Create
 Ore Excavation needs Sinytra Connector and Forgified Fabric API to run on
 NeoForge, which is how it ships for 1.21.1. If the server starts slowly
 or a mod misbehaves, that pairing is worth looking at first.

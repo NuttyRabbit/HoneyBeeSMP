@@ -3,3 +3,8 @@ pauseOnLostFocus:false
 skipMultiplayerWarning:true
 tutorialStep:none
 onboardAccessibility:false
+key_gui.xaero_new_waypoint:key.keyboard.j
+key_gui.xaero_enlarge_map:key.keyboard.p
+key_key.corpse.death_history:key.keyboard.l
+key_key.voice_chat_group:key.keyboard.f7
+key_key.mute_microphone:key.keyboard.f9

@@ -1,0 +1,9 @@
+# LPChatPrefix shows the LuckPerms prefix in chat.
+# The group prefixes and weights are set by scripts/luckperms-groups.sh.
+
+["LPChatPrefix Config"]
+	enablePrefix = true
+	enableSuffix = true
+	messageFormat = "{prefix} {player}{suffix}: {message}"
+	messageColor = "gray"
+	nameColor = "white"

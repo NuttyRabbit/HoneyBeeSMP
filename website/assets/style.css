@@ -185,23 +185,6 @@
 
     /* --- hero ---------------------------------------------------------- */
     .hero { padding: 5rem 0 3.5rem; text-align: center; }
-    .hero .kicker {
-      display: inline-flex;
-      align-items: center;
-      gap: .55rem;
-      padding: .34rem .85rem;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: rgba(255, 193, 7, .06);
-      font-size: .8rem;
-      color: var(--ink-2);
-      margin-bottom: 1.5rem;
-    }
-    .hero .kicker .dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: #5ad48a;
-      box-shadow: 0 0 0 3px rgba(90, 212, 138, .16);
-    }
     .hero h1 {
       font-size: clamp(2.9rem, 11vw, 6.4rem);
       font-weight: 800;

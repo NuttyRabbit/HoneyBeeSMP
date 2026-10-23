@@ -10,7 +10,7 @@ clicks play gets exactly this pack installed, and is told when it changes.
 
 ## What is in the pack
 
-83 mods, chosen to be a coherent set rather than the biggest one possible.
+85 mods, chosen to be a coherent set rather than the biggest one possible.
 
 ### Create and factory building
 
@@ -20,6 +20,8 @@ clicks play gets exactly this pack installed, and is told when it changes.
 | Create: Crafts & Additions | Extra Create machines and fluids. |
 | Create: Copycats+ | Copycat blocks in every material, so a build fits the landscape. |
 | Create: Connected | Quality-of-life blocks for Create, individually toggleable. |
+| Create: Aeronautics | Airships, planes and cars as physics-driven contraptions. |
+| Sable | Sub-level physics engine required by Create: Aeronautics. |
 | Create: Compression | Compressors and the machines around them. |
 | Create: Ore Excavation | The drill rebalance, which is what makes Create's mining loop worth playing. |
 | Create: Numismatics | Currency, so the factory has something to be worth. |
@@ -125,7 +127,7 @@ what a player installs - and they can never drift apart.
 The pack also records a SHA-512 hash for every file, so a download that is
 corrupted or tampered with is caught rather than silently installed.
 
-Of the 83 mods, 72 are installed on the server and 65 on players' clients.
+Of the 85 mods, 74 are installed on the server and 68 on players' clients.
 Mods that are on neither, or on both, sit in between - the pack records
 each file's split exactly.
 
@@ -302,7 +304,7 @@ follow:
 
 ### A note on the pack's size
 
-83 mods is a lot, and some of them pull in a fair bit underneath - Create
+85 mods is a lot, and some of them pull in a fair bit underneath - Create
 Ore Excavation needs Sinytra Connector and Forgified Fabric API to run on
 NeoForge, which is how it ships for 1.21.1. If the server starts slowly
 or a mod misbehaves, that pairing is worth looking at first.

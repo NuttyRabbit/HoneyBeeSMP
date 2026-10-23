@@ -100,18 +100,24 @@ and try again.
 
 ## What is in the pack
 
-69 mods, chosen to work well together rather than to be the biggest set
+83 mods, chosen to work well together rather than to be the biggest set
 possible.
 
 ### Create and factory building
 
 - **Create** - belts, shafts, cogs, trains and contraptions
 - **Create: Crafts & Additions** - extra Create machines and fluids
+- **Create: Copycats+** - copycat blocks in every material, which is what
+  makes Create builds fit into a landscape
+- **Create: Connected** - the quality-of-life blocks Create should have
+  shipped with
 - **Create: Compression** - compressors and the machines around them
 - **Create: Ore Excavation** - the drill rebalance, which is what makes
   Create's mining loop worth playing
 - **Create: Numismatics** - currency, so the factory has something to be
   worth
+- **Farmer's Delight** and **Create: Central Kitchen** - farming and cooking,
+  automated with Create machines
 - **Sophisticated Storage** - storage blocks, and the drawers Create fills
 - **Productive Bees** - bees, and the automation built around them
 - **FastSuite** and **FastWorkbench** - crafting speed, so a large factory is
@@ -119,11 +125,15 @@ possible.
 
 ### Quality of life
 
-- **EMI** - recipe viewer
+- **EMI** - recipe viewer, with **EMI Loot** for loot tables
 - **Jade** - block information in the world
 - **AppleSkin** - shows real food values
 - **Waystones** - teleport stones for getting around
-- **WTHIT** - shows what a waystone links to
+- **Nature's Compass** and **Explorer's Compass** - find a biome or a
+  structure without walking the whole map
+- **Corpse** - your items stay with your body instead of scattering
+- **Polymorph** - pick the output when more than one recipe matches
+- **Controlling** - search the keybind list
 - **Shulker Box Tooltip** - see what is in a shulker without opening it
 - **Mouse Tweaks** - inventory right-click behaviour
 - **BetterF3** - the F3 debug screen
@@ -143,6 +153,10 @@ possible.
 - **Lithium** and **ModernFix** - tick and memory performance
 - **Noisium** - fewer random ticks, which matters on a server full of
   machinery
+- **ServerCore** - server-only: view and simulation distance, mobcaps and
+  chunk ticking, tuned instead of left at their defaults
+- **Packet Fixer** - larger packets and timeouts, so a big contraption does
+  not disconnect its owner
 - **Spark** - the profiler, so you can see where the time goes
 - **AntiXray** - stops ore and cave reveals through the server
 

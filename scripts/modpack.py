@@ -31,6 +31,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -139,7 +140,46 @@ def normalize_env(index: dict) -> int:
     return changed
 
 
+def project_id(entry: dict) -> str:
+    """The Modrinth project a pack file came from, taken from its CDN URL."""
+    for url in entry.get("downloads") or []:
+        match = re.search(r"cdn\.modrinth\.com/data/([A-Za-z0-9]+)/", url)
+        if match:
+            return match.group(1)
+    return ""
+
+
+def dedupe_projects(index: dict) -> int:
+    """Keep one file per Modrinth project.
+
+    Dependencies are resolved by project, so a library can be added once
+    because an older mod pinned it and again when a newer mod brought a
+    newer version. NeoForge loads the highest version and ignores the rest,
+    but every player still downloads both jars, and which one wins is not
+    something the pack should leave to chance. The last entry wins: entries
+    are appended, so that is the one most recently added.
+    """
+    files = index.get("files", [])
+    last = {}
+    for position, entry in enumerate(files):
+        pid = project_id(entry)
+        if pid:
+            last[pid] = position
+
+    kept = [
+        entry
+        for position, entry in enumerate(files)
+        if not project_id(entry) or last[project_id(entry)] == position
+    ]
+    removed = len(files) - len(kept)
+    index["files"] = kept
+    return removed
+
+
 def save_index(index: dict) -> None:
+    removed = dedupe_projects(index)
+    if removed:
+        info(f"removed {removed} duplicate project file(s)")
     normalize_env(index)
     os.makedirs(os.path.dirname(INDEX_PATH), exist_ok=True)
     with open(INDEX_PATH, "w", encoding="utf-8") as fh:

@@ -305,12 +305,21 @@ def cmd_add(args) -> int:
     index = load_index()
     known = existing_paths(index)
     added = 0
+    changed = 0
     queue = list(args.slug)
     seen = set()
     # Only the mods that were asked for by name are forced to be
     # server-only. A dependency pulled in behind one of them might well be
     # wanted on the client too.
     explicit = set(args.slug)
+    # Modrinth records a project's client side once, but what matters is
+    # whether something the client loads depends on it. A worldgen library
+    # can be "client unsupported" and still be a hard dependency of a mod
+    # the client installs - Terralith needs Lithostitched, and a launcher
+    # that trusts the metadata leaves the client unable to boot. Track the
+    # mods the client will load and force their required dependencies onto
+    # the client as well.
+    client_needed = set()
 
     while queue:
         slug = queue.pop(0)
@@ -330,10 +339,20 @@ def cmd_add(args) -> int:
             # mean the server never installs the mod we asked for. A mod
             # named as a server tool belongs on the server.
             entry["env"]["server"] = "required"
+        elif slug in client_needed and entry["env"]["client"] == "unsupported":
+            entry["env"]["client"] = "required"
         title = project.get("title", slug)
 
         if entry["path"] in known:
             info(f"  {title}: already in the pack")
+            if slug in client_needed:
+                for existing in index.get("files", []):
+                    if existing["path"] != entry["path"]:
+                        continue
+                    if existing["env"]["client"] == "unsupported":
+                        existing["env"]["client"] = "required"
+                        changed += 1
+                        info(f"  {title} is needed by a client mod -> client: required")
         else:
             index.setdefault("files", []).append(entry)
             known.add(entry["path"])
@@ -351,10 +370,12 @@ def cmd_add(args) -> int:
             dep_slug = dep.get("project_id")
             if not dep_slug:
                 continue
+            if entry["env"]["client"] != "unsupported":
+                client_needed.add(dep_slug)
             if dep_slug not in seen:
                 queue.append(dep_slug)
 
-    if added:
+    if added or changed:
         index.setdefault("dependencies", {})
         index["dependencies"]["minecraft"] = game
         index["dependencies"][loader_name] = loader_version
@@ -372,7 +393,7 @@ def cmd_add(args) -> int:
     else:
         info("nothing to add")
 
-    info(f"{added} mod(s) added")
+    info(f"{added} mod(s) added" + (f", {changed} updated" if changed else ""))
     return 0
 
 

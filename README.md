@@ -216,6 +216,10 @@ whole `Staff` category is hidden from them.
 `bugs` and `suggestions` are forum channels, so each report or idea is a
 post of its own rather than a message that gets lost in the scroll.
 
+`logs` is staff-only and receives the bot's audit trail: message
+edits/deletes, joins and leaves, role and channel changes, forum threads,
+invites, voice moves, bans and unbans.
+
 ## Roles
 
 From the top down:

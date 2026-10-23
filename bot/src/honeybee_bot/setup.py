@@ -143,7 +143,6 @@ def category_specs() -> list[CategorySpec]:
     """The categories and channels the server has."""
     everyone = (EVERYONE,)
     staff = ("Moderator", "Admin")
-    admins = ("Admin", "Owner")
     return [
         CategorySpec(
             "Information",
@@ -212,7 +211,13 @@ def category_specs() -> list[CategorySpec]:
             "Staff",
             [
                 ChannelSpec("staff-chat", "text", "Staff only.", read=staff, write=staff),
-                ChannelSpec("logs", "text", "Staff only.", read=admins, write=admins),
+                ChannelSpec(
+                    "logs",
+                    "text",
+                    "Staff-only audit log.",
+                    read=("Admin", "Owner", BOT_ROLE),
+                    write=("Admin", "Owner", BOT_ROLE),
+                ),
             ],
         ),
         CategorySpec(

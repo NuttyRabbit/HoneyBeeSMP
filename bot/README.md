@@ -12,6 +12,11 @@ roles and permissions up in the first place.
 - `/setup` - create the server's channels, roles and permissions, and put
   the permissions right on anything that is already there. Admins only.
 - New members are given the `Member` role when they join.
+- Audit events are posted to the staff-only `#logs` channel: message
+  edits/deletes, joins/leaves, role and channel changes, forum threads,
+  invites, voice moves, bans and unbans. Message content is included when
+  Discord provides it; enable the Message Content Intent in the developer
+  portal if you want full before/after text.
 
 The Minecraft server is asked using the ordinary server list ping, so
 nothing has to be installed or configured on the Minecraft side, and no
@@ -80,6 +85,7 @@ falls over. Logs are in `journalctl -u honeybeesmp-discord-bot.service`.
 | `DISCORD_TOKEN` | the bot token from the Discord developer portal |
 | `DISCORD_GUILD_ID` | the server the bot is for |
 | `DISCORD_STATUS_CHANNEL_ID` | channel for the status embed and join/leave messages (optional) |
+| `DISCORD_LOG_CHANNEL_ID` | channel for audit logs (optional; defaults to `#logs`) |
 | `SERVER_ADDRESS` | the Minecraft server's address |
 | `SERVER_PORT` | the Minecraft server's port |
 | `POLL_SECONDS` | how often to check the player list |

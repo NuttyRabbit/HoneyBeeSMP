@@ -8,6 +8,7 @@ Everything it needs comes from the environment:
     DISCORD_TOKEN            the bot token
     DISCORD_GUILD_ID          the server it is for
     DISCORD_STATUS_CHANNEL   channel to post the player list in (optional)
+    DISCORD_LOG_CHANNEL_ID   channel for audit logs (optional; defaults to #logs)
     SERVER_ADDRESS           the Minecraft server's address
     SERVER_PORT              the Minecraft server's port
 
@@ -27,6 +28,7 @@ import discord
 from discord.ext import commands
 
 from . import setup as server_setup
+from .audit import AuditLogger
 
 log = logging.getLogger("honeybee")
 
@@ -43,6 +45,7 @@ class Config:
         self.token = _required("DISCORD_TOKEN")
         self.guild_id = _required("DISCORD_GUILD_ID")
         self.status_channel_id = os.environ.get("DISCORD_STATUS_CHANNEL_ID", "").strip()
+        self.log_channel_id = os.environ.get("DISCORD_LOG_CHANNEL_ID", "").strip()
         self.server_address = os.environ.get("SERVER_ADDRESS", "play.honeybeesmp.co.uk").strip()
         self.server_port = int(os.environ.get("SERVER_PORT", "25566"))
         # How often to check whether the player list has changed.
@@ -179,6 +182,7 @@ class HoneyBee(commands.Bot):
         super().__init__(command_prefix=commands.when_mentioned, intents=intents)
         self.config = config
         self._status_message: discord.Message | None = None
+        self._audit: AuditLogger | None = None
 
         # discord.py does not pick up slash commands that are defined as
         # methods on a Bot subclass, so they are added to the tree here.
@@ -199,6 +203,139 @@ class HoneyBee(commands.Bot):
             await self.tree.sync(guild=discord.Object(id=self.config.guild_id))
         log.info("commands registered (%s)", self.config.command_scope)
 
+    async def on_ready(self) -> None:
+        """Resolve the logs channel once the guild cache is ready."""
+        if self._audit is not None:
+            return
+        guild = self.get_guild(int(self.config.guild_id))
+        if guild is None:
+            log.warning("the bot is not in the configured guild")
+            return
+
+        channel: discord.abc.GuildChannel | None = None
+        if self.config.log_channel_id:
+            try:
+                channel = guild.get_channel(int(self.config.log_channel_id))
+            except ValueError:
+                log.warning(
+                    "DISCORD_LOG_CHANNEL_ID is not a channel id: %r",
+                    self.config.log_channel_id,
+                )
+        if channel is None:
+            channel = server_setup.find_channel(guild, "logs")
+        if not isinstance(channel, discord.TextChannel):
+            log.warning("no #logs text channel found; audit logging is off")
+            return
+
+        self._audit = AuditLogger(channel, guild.id)
+        log.info("audit logging to #%s", channel.name)
+        await self._audit.startup(self.user, self.latency)
+
+    # -- audit logging ------------------------------------------------------
+
+    async def on_message_delete(self, message: discord.Message) -> None:
+        if self._audit is not None:
+            await self._audit.message_delete(message)
+
+    async def on_message_edit(
+        self, before: discord.Message, after: discord.Message
+    ) -> None:
+        if self._audit is not None:
+            await self._audit.message_edit(before, after)
+
+    async def on_bulk_message_delete(
+        self, messages: list[discord.Message]
+    ) -> None:
+        if self._audit is not None:
+            await self._audit.bulk_message_delete(messages)
+
+    async def on_member_remove(self, member: discord.Member) -> None:
+        if self._audit is not None:
+            await self._audit.member_remove(member)
+
+    async def on_member_update(
+        self, before: discord.Member, after: discord.Member
+    ) -> None:
+        if self._audit is not None:
+            await self._audit.member_update(before, after)
+
+    async def on_member_ban(
+        self, guild: discord.Guild, user: discord.User
+    ) -> None:
+        if self._audit is not None:
+            await self._audit.member_ban(guild, user)
+
+    async def on_member_unban(
+        self, guild: discord.Guild, user: discord.User
+    ) -> None:
+        if self._audit is not None:
+            await self._audit.member_unban(guild, user)
+
+    async def on_guild_role_create(self, role: discord.Role) -> None:
+        if self._audit is not None:
+            await self._audit.role_create(role)
+
+    async def on_guild_role_delete(self, role: discord.Role) -> None:
+        if self._audit is not None:
+            await self._audit.role_delete(role)
+
+    async def on_guild_role_update(
+        self, before: discord.Role, after: discord.Role
+    ) -> None:
+        if self._audit is not None:
+            await self._audit.role_update(before, after)
+
+    async def on_guild_channel_create(
+        self, channel: discord.abc.GuildChannel
+    ) -> None:
+        if self._audit is not None:
+            await self._audit.channel_create(channel)
+
+    async def on_guild_channel_delete(
+        self, channel: discord.abc.GuildChannel
+    ) -> None:
+        if self._audit is not None:
+            await self._audit.channel_delete(channel)
+
+    async def on_guild_channel_update(
+        self,
+        before: discord.abc.GuildChannel,
+        after: discord.abc.GuildChannel,
+    ) -> None:
+        if self._audit is not None:
+            await self._audit.channel_update(before, after)
+
+    async def on_thread_create(self, thread: discord.Thread) -> None:
+        if self._audit is not None:
+            await self._audit.thread_create(thread)
+
+    async def on_thread_delete(self, thread: discord.Thread) -> None:
+        if self._audit is not None:
+            await self._audit.thread_delete(thread)
+
+    async def on_thread_update(
+        self, before: discord.Thread, after: discord.Thread
+    ) -> None:
+        if self._audit is not None:
+            await self._audit.thread_update(before, after)
+
+    async def on_invite_create(self, invite: discord.Invite) -> None:
+        if self._audit is not None:
+            await self._audit.invite_create(invite)
+
+    async def on_invite_delete(self, invite: discord.Invite) -> None:
+        if self._audit is not None:
+            await self._audit.invite_delete(invite)
+
+    async def on_voice_state_update(
+        self,
+        member: discord.Member,
+        before: discord.VoiceState,
+        after: discord.VoiceState,
+    ) -> None:
+        if self._audit is not None:
+            await self._audit.voice_state(member, before, after)
+
     # -- joining ------------------------------------------------------------
 
     async def on_member_join(self, member: discord.Member) -> None:
@@ -206,6 +343,8 @@ class HoneyBee(commands.Bot):
         guild = member.guild
         if guild.id != int(self.config.guild_id):
             return
+        if self._audit is not None:
+            await self._audit.member_join(member)
         role = server_setup.find_role(guild, server_setup.MEMBER_ROLE)
         if role is None or role in member.roles:
             return

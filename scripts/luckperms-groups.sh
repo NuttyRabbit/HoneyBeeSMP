@@ -111,6 +111,11 @@ lp "group admin permission set xaero.pac_server_claims true"
 lp "group admin permission set xaero.pac_claims_impersonation true"
 lp "group admin permission set xaero.pac_parties_impersonation true"
 
+# Let administrators use LuckPerms in-game. The bare node covers the root
+# command; the wildcard covers its subcommands.
+lp "group admin permission set luckperms true"
+lp "group admin permission set luckperms.* true"
+
 # --- The owner ----------------------------------------------------------------
 if [ -n "$OWNER" ]; then
 	lp "user $OWNER parent add admin"

@@ -52,6 +52,12 @@ skips them and the server still installs them.
 | AntiXray | Stops ore and cave reveals through the server. |
 | Spark | Profiler. Run `/spark` to see where the time goes. |
 
+> **LuckPerms is pinned to 5.4.150.** The 5.4.140 build for Minecraft
+> 1.21.1 throws `Capability has not been initialised` during joins on
+> NeoForge 1.21.1 and disconnects the player with `Invalid player data`.
+> The 1.21.4-labelled 5.4.150 build is compatible with 1.21.1 and fixes
+> the join. Do not replace it with the 1.21.1 build.
+
 ### Quality of life
 
 | Mod | Why |

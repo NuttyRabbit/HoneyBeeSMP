@@ -192,7 +192,10 @@ python3 scripts/modpack.py verify /opt/crafty/servers/<id>/mods
    - Use the Modrinth project slug.
    - This pulls in required dependencies automatically, so you will not hit
      "Mod X requires Y or above" on the server.
-   - It records the client/server split for you.
+   - It records the client/server split for you, then corrects it: any mod
+     the server runs is marked required on the client too. Modrinth calls
+     Create "optional" on the client, and a launcher that believes that
+     offers it as a checkbox - unticking it means "cannot join".
    - It moves the pack's version on, because the pack's contents have
      changed. Modrinth will not accept a version number it has already
      seen, so the version has to move for the pack to be publishable.

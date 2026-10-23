@@ -69,7 +69,11 @@ rclone_put() {
 }
 
 fail=0
-WORK=$(mktemp -d)
+# /tmp on this host is a 12G tmpfs with a user quota. The live world is
+# larger than that, so staging the copy and the zip there fails with
+# "Disk quota exceeded" before anything is uploaded. Use the root
+# filesystem instead, which has plenty of free space for both.
+WORK=$(mktemp -d /var/tmp/honeybeesmp-backup.XXXXXX)
 cleanup() {
 	sudo rm -rf "$WORK" 2>/dev/null
 	return 0

@@ -82,7 +82,8 @@
     }
 
     .wrap { max-width: var(--max); margin: 0 auto; padding: 0 1.25rem; }
-    .section { padding: 4.5rem 0 1rem; }
+    /* Keep the horizontal padding from .wrap when a section is also a wrap. */
+    .section { padding-top: 4.5rem; padding-bottom: 1rem; }
     .section + .section { border-top: 1px solid var(--line-soft); }
 
     .eyebrow {
@@ -184,7 +185,7 @@
     .btn.discord:hover { background: rgba(139, 123, 255, .16); transform: translateY(-2px); }
 
     /* --- hero ---------------------------------------------------------- */
-    .hero { padding: 5rem 0 3.5rem; text-align: center; }
+    .hero { padding-top: 5rem; padding-bottom: 3.5rem; text-align: center; }
     .hero h1 {
       font-size: clamp(2.9rem, 11vw, 6.4rem);
       font-weight: 800;
@@ -516,6 +517,100 @@ a.card { text-decoration: none; }
   color: var(--ink-3);
   font-size: .86rem;
   letter-spacing: .03em;
+}
+
+/* --- roadmap ------------------------------------------------------------ */
+.roadmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  margin: 0 0 2rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .38rem;
+  padding: .22rem .58rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.badge.done {
+  color: #7ee2a8;
+  border-color: rgba(90, 212, 138, .32);
+  background: rgba(90, 212, 138, .08);
+}
+.badge.next {
+  color: var(--amber);
+  border-color: rgba(255, 193, 7, .34);
+  background: rgba(255, 193, 7, .08);
+}
+.badge.planned {
+  color: #c3b5ff;
+  border-color: rgba(185, 168, 255, .32);
+  background: rgba(139, 123, 255, .08);
+}
+
+.roadmap {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+.roadmap-column {
+  --roadmap-accent: var(--line);
+  border-top: 2px solid var(--roadmap-accent);
+  padding-top: 1rem;
+}
+.roadmap-column.done { --roadmap-accent: #5ad48a; }
+.roadmap-column.next { --roadmap-accent: var(--amber); }
+.roadmap-column.planned { --roadmap-accent: #8b7bff; }
+.roadmap-column > header { margin-bottom: 1rem; }
+.roadmap-column > header .badge { margin-bottom: .55rem; }
+.roadmap-column h2 {
+  font-size: 1.35rem;
+  margin-bottom: .3rem;
+}
+.roadmap-column > header p {
+  margin: 0;
+  font-size: .9rem;
+  color: var(--ink-3);
+}
+
+.roadmap-item {
+  background: var(--card);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  padding: 1.05rem 1.1rem;
+  margin-bottom: .7rem;
+}
+.roadmap-item:last-child { margin-bottom: 0; }
+.roadmap-item h3 {
+  font-size: 1rem;
+  margin-bottom: .35rem;
+}
+.roadmap-item p {
+  margin: 0;
+  font-size: .9rem;
+  color: var(--ink-3);
+}
+.roadmap-note { margin-top: 2rem; }
+
+@media (max-width: 60rem) {
+  .roadmap { grid-template-columns: 1fr; gap: 2rem; }
 }
 
 /* --- cookie notice ------------------------------------------------------- */

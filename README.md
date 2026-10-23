@@ -184,7 +184,7 @@ extra - the launcher works out which files belong on your machine from the
 pack itself.
 
 - **LuckPerms** - permissions
-- **LPChatPrefix** - shows LuckPerms group prefixes in chat
+- **BetterChatNeoForged** - shows LuckPerms group prefixes in chat
 - **Open Parties and Claims** - claims, parties and grief protection
 - **Simple Voice Chat** - proximity voice, in game
 - **KubeJS** - server-side scripting

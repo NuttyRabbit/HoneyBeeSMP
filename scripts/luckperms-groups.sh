@@ -68,12 +68,13 @@ lp "group mod parent add trusted"
 lp "group admin parent add mod"
 
 # --- Chat prefixes -----------------------------------------------------------
-# LPChatPrefix reads the prefix from LuckPerms and puts it in front of the
-# player's name in chat. The config is in the pack at
-# server-overrides/config/lpchatprefix-common.toml.
+# BetterChatNeoForged reads the prefix from LuckPerms and puts it in front of
+# the player's name in chat. The config is in the pack at
+# server-overrides/config/betterchatneoforged-common.toml.
 #
-# Keep these in Minecraft's legacy colour-code format. LPChatPrefix converts
-# "&" to the section sign itself; MiniMessage tags would be shown literally.
+# Keep these in Minecraft's legacy colour-code format. BetterChatNeoForged
+# converts "&" to the section sign itself; MiniMessage tags would be shown
+# literally.
 # The group weights make the most senior group's prefix win over the one it
 # inherits from.
 lp "group default setweight 0"

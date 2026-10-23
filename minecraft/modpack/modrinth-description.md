@@ -84,10 +84,10 @@ And a few for performance and the world itself:
 - **Xaero's Minimap** and **Xaero's World Map** - minimap, waypoints and
   the world map
 
-The server also runs LuckPerms for permissions, LPChatPrefix for group
-prefixes in chat, Open Parties and Claims so you can protect your builds,
-Simple Voice Chat for proximity voice, and KubeJS. Those are server-side
-only - you do not need them.
+The server also runs LuckPerms for permissions, BetterChatNeoForged for
+group prefixes in chat, Open Parties and Claims so you can protect your
+builds, Simple Voice Chat for proximity voice, and KubeJS. Those are
+server-side only - you do not need them.
 
 86 mods in all, chosen to work well together rather than to be the biggest
 set possible.

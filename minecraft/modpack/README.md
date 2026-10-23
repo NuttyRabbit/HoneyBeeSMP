@@ -18,7 +18,6 @@ clicks play gets exactly this pack installed, and is told when it changes.
 |---|---|
 | Create | The centrepiece. Belts, shafts, cogs, trains, contraptions. |
 | Create: Crafts & Additions | Extra Create machines and fluids. |
-| Create: Big Cannons | Cannons and projectiles for Create. |
 | Create: Compression | Compressors and the machines around them. |
 | Create: Ore Excavation | The drill rebalance, which is what makes Create's mining loop worth playing. |
 | Create: Numismatics | Currency, so the factory has something to be worth. |
@@ -26,7 +25,6 @@ clicks play gets exactly this pack installed, and is told when it changes.
 | Sophisticated Backpacks | A backpack you can carry, and use on a conveyor. |
 | Productive Bees | Bees, and the automation built around them. |
 | FastSuite / FastWorkbench | Crafting speed, so a big factory is not painful to use. |
-| Ritchie's Projectile Library | Required by Big Cannons. |
 | Sophisticated Core | Required by Sophisticated Storage. |
 
 ### Server side
@@ -115,7 +113,7 @@ what a player installs - and they can never drift apart.
 The pack also records a SHA-512 hash for every file, so a download that is
 corrupted or tampered with is caught rather than silently installed.
 
-Of the 69 mods, 60 are installed on the server and 54 on players' clients.
+Of the 69 mods, 60 are installed on the server and 52 on players' clients.
 Mods that are on neither, or on both, sit in between - the pack records
 each file's split exactly.
 

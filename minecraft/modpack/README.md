@@ -175,6 +175,28 @@ minecraft/server-config/openpartiesandclaims-server.toml
 generated, on every deploy. It only replaces keys that are already
 there, and it leaves the rest of the file alone.
 
+### Client default settings
+
+`client-overrides/options.txt` holds the few vanilla options worth
+changing for this server, so a fresh install does not start with the
+singleplayer tutorial and warnings:
+
+- `skipMultiplayerWarning:true` - the pack is for a multiplayer server,
+  so the "third-party server" warning on first join is just noise.
+- `tutorialStep:none` - no singleplayer tutorial prompts.
+- `onboardAccessibility:false` - no first-launch accessibility setup
+  screen; the settings are still in Options where they belong.
+- `pauseOnLostFocus:false` - alt-tabbing does not throw up the pause
+  menu. The world runs on the server, so this only affects the client.
+
+The file is deliberately partial. Minecraft leaves any key it cannot
+find at its default, so graphics, keybinds, sound and GUI scale stay
+whatever the player's machine and taste need. A pack default that
+overrides a player's keybinds or render distance would be a bug.
+
+The `version:3955` line is the 1.21.1 options format. Update it when the
+pack moves to a new Minecraft version.
+
 ## Working with it
 
 All of this is done through one tool, `scripts/modpack.py`, which is the

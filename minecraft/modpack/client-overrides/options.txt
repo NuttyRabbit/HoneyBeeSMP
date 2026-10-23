@@ -1,0 +1,5 @@
+version:3955
+pauseOnLostFocus:false
+skipMultiplayerWarning:true
+tutorialStep:none
+onboardAccessibility:false

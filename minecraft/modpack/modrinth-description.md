@@ -27,11 +27,17 @@ game:
 
 - **Create** - belts, shafts, cogs, trains and contraptions
 - **Create: Crafts & Additions** - extra Create machines and fluids
+- **Create: Copycats+** - copycat blocks in every material, which is what
+  makes Create builds fit into a landscape
+- **Create: Connected** - the quality-of-life blocks Create should have
+  shipped with
 - **Create: Compression** - compressors and the machines around them
 - **Create: Ore Excavation** - the drill rebalance, which is what makes
   Create's mining loop worth playing
 - **Create: Numismatics** - currency, so the factory has something to be
   worth
+- **Farmer's Delight** and **Create: Central Kitchen** - farming and cooking,
+  automated with Create machines
 - **Sophisticated Storage** - storage blocks, and the drawers Create fills
 - **Productive Bees** - bees, and the automation built around them
 - **FastSuite** and **FastWorkbench** - crafting speed, so a large factory
@@ -39,11 +45,15 @@ game:
 
 Plus a quality-of-life set so the game stays pleasant:
 
-- **EMI** - recipe viewer
+- **EMI** - recipe viewer, with **EMI Loot** for loot tables
 - **Jade** - block information in the world
 - **AppleSkin** - shows real food values
 - **Waystones** - teleport stones for getting around
-- **WTHIT** - shows what a waystone links to
+- **Nature's Compass** and **Explorer's Compass** - find a biome or a
+  structure without walking the whole map
+- **Corpse** - your items stay with your body instead of scattering
+- **Polymorph** - pick the output when more than one recipe matches
+- **Controlling** - search the keybind list
 - **Shulker Box Tooltip** - see what is in a shulker without opening it
 - **Mouse Tweaks** - inventory right-click behaviour
 - **BetterF3** - the F3 debug screen
@@ -61,6 +71,9 @@ And a few for performance and the world itself:
 - **Continuity** - connected textures, so Create looks far better
 - **Entity Texture Features** - the same for entities
 - **Lithium** and **ModernFix** - tick and memory performance
+- **ServerCore** - server-side view distance, mobcaps and chunk ticking
+- **Packet Fixer** - larger packets and timeouts, so a big contraption does
+  not disconnect its owner
 - **Spark** - the profiler, so you can see where the time goes
 - **AntiXray** - stops ore and cave reveals through the server
 - **Terralith** - better terrain, caves and biomes
@@ -72,7 +85,7 @@ The server also runs LuckPerms for permissions, Open Parties and Claims so
 you can protect your builds, Simple Voice Chat for proximity voice, and
 KubeJS. Those are server-side only - you do not need them.
 
-69 mods in all, chosen to work well together rather than to be the biggest
+83 mods in all, chosen to work well together rather than to be the biggest
 set possible.
 
 ## Reporting problems

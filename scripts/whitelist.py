@@ -30,6 +30,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import uuid
 
 MOJANG_API = "https://api.mojang.com/users/profiles/minecraft"
 USER_AGENT = "HoneyBeeSMP-whitelist/1.0 (honeybeesmp.co.uk)"
@@ -81,9 +82,11 @@ def resolve(name: str) -> dict:
     except urllib.error.URLError as err:
         die(f"could not reach the Mojang API: {err.reason}")
 
-    # The API returns the name with its real capitalisation, which is what
-    # the server expects in whitelist.json.
-    return {"uuid": body["id"], "name": body["name"]}
+    # The API returns the UUID as 32 hexadecimal characters with no
+    # hyphens. Minecraft parses whitelist UUIDs with UUID.fromString,
+    # which only accepts the canonical hyphenated form and otherwise
+    # silently loads an empty whitelist. Store the canonical form.
+    return {"uuid": str(uuid.UUID(body["id"])), "name": body["name"]}
 
 
 def build(env: str) -> list:

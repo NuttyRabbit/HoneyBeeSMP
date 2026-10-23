@@ -1,9 +1,11 @@
-# LPChatPrefix shows the LuckPerms prefix in chat.
-# The group prefixes and weights are set by scripts/luckperms-groups.sh.
-
 ["LPChatPrefix Config"]
+	#是否启用前缀显示
 	enablePrefix = true
+	#是否启用后缀显示
 	enableSuffix = true
+	#聊天消息格式模板 (支持: {prefix}, {player}, {suffix}, {message})
 	messageFormat = "{prefix} {player}{suffix}: {message}"
+	#消息文本颜色 (Minecraft 颜色代码，如: gray, white, aqua)
 	messageColor = "gray"
+	#玩家名称颜色 (Minecraft 颜色代码)
 	nameColor = "white"

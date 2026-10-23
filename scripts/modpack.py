@@ -114,7 +114,33 @@ def load_index() -> dict:
         return json.load(fh)
 
 
+def normalize_env(index: dict) -> int:
+    """Make the client side match what the server actually runs.
+
+    Modrinth's client_side field is unreliable for mods with a server
+    component: Create and Open Parties and Claims are listed as "optional"
+    on the client while being "required" on the server. A launcher that
+    believes that offers them as checkboxes, and a player who leaves one
+    unticked cannot join, because the server's mod list expects it.
+
+    So any mod that runs on both sides is required on both. Server-only
+    tools (client unsupported, e.g. Chunky) and client-only mods (server
+    unsupported) are left alone, because there is nothing to install on
+    the other side.
+    """
+    changed = 0
+    for entry in index.get("files", []):
+        env = entry.setdefault("env", {})
+        if env.get("client") == "unsupported" or env.get("server") == "unsupported":
+            continue
+        if env.get("client") != "required":
+            env["client"] = "required"
+            changed += 1
+    return changed
+
+
 def save_index(index: dict) -> None:
+    normalize_env(index)
     os.makedirs(os.path.dirname(INDEX_PATH), exist_ok=True)
     with open(INDEX_PATH, "w", encoding="utf-8") as fh:
         json.dump(index, fh, indent=2, sort_keys=False)

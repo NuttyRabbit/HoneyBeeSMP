@@ -107,7 +107,6 @@ possible.
 
 - **Create** - belts, shafts, cogs, trains and contraptions
 - **Create: Crafts & Additions** - extra Create machines and fluids
-- **Create: Big Cannons** - cannons and projectiles
 - **Create: Compression** - compressors and the machines around them
 - **Create: Ore Excavation** - the drill rebalance, which is what makes
   Create's mining loop worth playing

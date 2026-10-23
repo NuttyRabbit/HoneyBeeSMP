@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "game": "minecraft",
-  "versionId": "1.0.13",
+  "versionId": "1.0.14",
   "name": "HoneyBeeSMP",
   "summary": "The mods and configs for the HoneyBeeSMP Minecraft server.",
   "files": [
@@ -66,21 +66,6 @@
       "fileSize": 1661802
     },
     {
-      "path": "mods/createbigcannons-5.11.7+mc.1.21.1.jar",
-      "hashes": {
-        "sha1": "c90ee0b2142e2c58d233e150cb3a24c7cb07eb2d",
-        "sha512": "24f414dfbb973a0f4d9c9b2aa059edc7bed4d23b4f39eb1f7d23a1d6b437e3b5d64cca6e4b85ff7eb2815743fa711d54ad652bffe96d1eb1234544716006440d"
-      },
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "downloads": [
-        "https://cdn.modrinth.com/data/GWp4jCJj/versions/bOiDu0LS/createbigcannons-5.11.7%2Bmc.1.21.1.jar"
-      ],
-      "fileSize": 3771506
-    },
-    {
       "path": "mods/CreateCompression-1.21.1-2.0.0.jar",
       "hashes": {
         "sha1": "853ec22bf8506ee0e32cee877b9a896d8eb8202e",
@@ -109,21 +94,6 @@
         "https://cdn.modrinth.com/data/hMlaZH8f/versions/6B0lbqeG/sophisticatedstorage-1.21.1-1.6.7.2184.jar"
       ],
       "fileSize": 1932850
-    },
-    {
-      "path": "mods/ritchiesprojectilelib-2.1.2+mc.1.21.1-neoforge.jar",
-      "hashes": {
-        "sha1": "ec2e4996f8bee8714173e603e379fef8a6901765",
-        "sha512": "6d64c84505a5a8fbb96d106603065465c5a2314ec09636900c5c1a31014c12fa68f1a41e758313cbf0d6f95d9a1f53bd67339020f7d8db0e184c23f66aee0330"
-      },
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "downloads": [
-        "https://cdn.modrinth.com/data/B3pb093D/versions/hZ6B2Z0x/ritchiesprojectilelib-2.1.2%2Bmc.1.21.1-neoforge.jar"
-      ],
-      "fileSize": 76369
     },
     {
       "path": "mods/sophisticatedcore-1.21.1-1.5.16.2422.jar",

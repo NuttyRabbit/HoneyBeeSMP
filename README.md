@@ -498,6 +498,22 @@ You can also restart as part of a deploy:
 ./scripts/deploy.sh live minecraft --restart
 ```
 
+### The daily restart
+
+The live server restarts itself once a day at **05:00 UK time**
+(`Europe/London`, so it stays at 5am through the BST/GMT change). Players see
+warnings at 10, 5, 2 and 0.5 minutes, then the world is saved, the server
+stops, and it starts again once the old process has gone.
+
+That is also when deployed changes take effect: a push never restarts the
+server by itself, so mods and configs that arrived during the day are loaded by
+the next daily restart.
+
+```sh
+systemctl list-timers honeybeesmp-daily-restart.timer   # next run
+journalctl -u honeybeesmp-daily-restart.service -f      # watch a run
+```
+
 ## Publish the modpack
 
 The server is listed on

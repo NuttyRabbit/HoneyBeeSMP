@@ -31,6 +31,9 @@ game:
   makes Create builds fit into a landscape
 - **Create: Connected** - the quality-of-life blocks Create should have
   shipped with
+- **Create: Aeronautics** - airships, planes and cars built as
+  physics-driven contraptions
+- **Sable** - the physics engine that makes them move
 - **Create: Compression** - compressors and the machines around them
 - **Create: Ore Excavation** - the drill rebalance, which is what makes
   Create's mining loop worth playing
@@ -85,7 +88,7 @@ The server also runs LuckPerms for permissions, Open Parties and Claims so
 you can protect your builds, Simple Voice Chat for proximity voice, and
 KubeJS. Those are server-side only - you do not need them.
 
-83 mods in all, chosen to work well together rather than to be the biggest
+85 mods in all, chosen to work well together rather than to be the biggest
 set possible.
 
 ## Reporting problems

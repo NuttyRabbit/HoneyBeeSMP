@@ -100,7 +100,7 @@ and try again.
 
 ## What is in the pack
 
-83 mods, chosen to work well together rather than to be the biggest set
+85 mods, chosen to work well together rather than to be the biggest set
 possible.
 
 ### Create and factory building
@@ -111,6 +111,9 @@ possible.
   makes Create builds fit into a landscape
 - **Create: Connected** - the quality-of-life blocks Create should have
   shipped with
+- **Create: Aeronautics** - airships, planes and cars built as
+  physics-driven contraptions
+- **Sable** - the sub-level physics engine Create: Aeronautics runs on
 - **Create: Compression** - compressors and the machines around them
 - **Create: Ore Excavation** - the drill rebalance, which is what makes
   Create's mining loop worth playing

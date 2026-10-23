@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "game": "minecraft",
-  "versionId": "1.2.2",
+  "versionId": "1.2.3",
   "name": "HoneyBeeSMP",
   "summary": "The mods and configs for the HoneyBeeSMP Minecraft server.",
   "files": [
@@ -1281,19 +1281,19 @@
       "fileSize": 12986135
     },
     {
-      "path": "mods/lpchatprefix-1.21.1_1.1.0.jar",
+      "path": "mods/betterchatneoforged-1.0.0.jar",
       "hashes": {
-        "sha1": "b46c158d1974d20ac0c960ba982af7a6349dfb62",
-        "sha512": "5c2603cdea4f996623f8b947655bf9d1db0c202ac91547eb66f8c3266104bf53f8f4528ebb4a5baa0f316acbc86e5ccbf5d84f06244cf0c6247d2806584ac8cd"
+        "sha1": "974110e4625ad67aeeb26a00702782784dfa7c0e",
+        "sha512": "67bd41cb9690f92e3a1c0f1b9aec07eec7d3f922bb79a88672ed1c7366f10fae4096309a92bb1fb2603367ff73c5e4dd1959d1f10a27fdf1695f3dbe97620efb"
       },
       "env": {
         "client": "unsupported",
         "server": "required"
       },
       "downloads": [
-        "https://cdn.modrinth.com/data/3td3RMwV/versions/5jTPxOLx/lpchatprefix-1.21.1_1.1.0.jar"
+        "https://cdn.modrinth.com/data/d8nlS8Nl/versions/cvtQndts/betterchatneoforged-1.0.0.jar"
       ],
-      "fileSize": 6371
+      "fileSize": 231708
     }
   ],
   "dependencies": {

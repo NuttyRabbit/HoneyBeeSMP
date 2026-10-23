@@ -42,7 +42,7 @@ skips them and the server still installs them.
 | Mod | Why |
 |---|---|
 | LuckPerms | Permissions. |
-| LPChatPrefix | Shows LuckPerms group prefixes in chat. |
+| BetterChatNeoForged | Shows LuckPerms group prefixes in chat. |
 | Open Parties and Claims | Claims, parties and grief protection. |
 | Simple Voice Chat | Proximity voice. The live server is on 24454, the dev server on 24455 - they run in the same container and cannot share a port. |
 | KubeJS | Server-side scripting. |
@@ -172,9 +172,10 @@ in `server-overrides/` is never sent to players.
 Some server-side mods - LuckPerms, Open Parties and Claims - write their
 own config on first run, with every option and a comment explaining it.
 Copying that file into the repo would mean tracking the mod's defaults,
-which go stale on every update. LPChatPrefix is the exception: its config
-is tiny and stable, so the complete file is tracked in
-`server-overrides/config/lpchatprefix-common.toml`.
+which go stale on every update. BetterChatNeoForged is the exception: its
+chat layout needs non-default values and the config is stable, so the
+complete file is tracked in
+`server-overrides/config/betterchatneoforged-common.toml`.
 
 So the repo holds only the settings we want changed:
 
@@ -199,8 +200,9 @@ Chat names are prefixed from the player's LuckPerms group:
 
 `scripts/luckperms-groups.sh` sets the prefixes and group weights, so a
 senior group wins over the prefix it inherits. The message layout is in
-`server-overrides/config/lpchatprefix-common.toml`: `[Player] Name:
-message`. LPChatPrefix is server-only; players do not need to install it.
+`server-overrides/config/betterchatneoforged-common.toml`: `[Player] Name:
+message`. BetterChatNeoForged is server-only; players do not need to
+install it.
 
 ### Client default settings
 

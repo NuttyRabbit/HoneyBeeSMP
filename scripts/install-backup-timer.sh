@@ -41,9 +41,8 @@ cat > /etc/systemd/system/honeybeesmp-backup.timer <<'EOF'
 Description=Run the HoneyBeeSMP backup twice daily
 
 [Timer]
-OnCalendar=*-*-* 03:00:00
-OnCalendar=*-*-* 15:00:00
-UTC=true
+OnCalendar=*-*-* 03:00:00 UTC
+OnCalendar=*-*-* 15:00:00 UTC
 Persistent=true
 RandomizedDelaySec=10m
 
